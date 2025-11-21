@@ -1,5 +1,6 @@
-extern crate opengl;
 extern crate glfw;
+
+mod opengl;
 
 pub mod errors;
 
@@ -8,4 +9,4 @@ pub mod lighting;
 pub mod render;
 pub mod window;
 
-pub use opengl::enums;
+pub use crate::opengl::enums;

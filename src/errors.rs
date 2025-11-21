@@ -2,7 +2,7 @@ use std::num::TryFromIntError;
 
 use glfw::{InitError, WindowEvent};
 use numeracy::enums::MatrixError;
-use opengl::enums::GlError;
+use crate::opengl::enums::GlError;
 
 #[derive(Debug)]
 pub enum RenderError {

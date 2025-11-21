@@ -1,10 +1,10 @@
 use std::time::{Duration, Instant};
 
-use opengl::enums::{
+use crate::opengl::enums::{
     BufferBit, DataFormat, DrawCall, DrawMode, DrawType, GlError, Object, ProgramSelect, UniformType
 };
-use opengl::intermediate_opengl;
-use opengl::abstractions::{Programs, WithObject};
+use crate::opengl::intermediate_opengl;
+use crate::opengl::abstractions::{Programs, WithObject};
 use numeracy::matrices::Matrix;
 
 use glfw;

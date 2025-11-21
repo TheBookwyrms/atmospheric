@@ -1,5 +1,6 @@
-use opengl::enums::{BlendFunc, BufferBit, GlEnable, GlError};
-use opengl::gl::Gl;
+use crate::opengl::enums::{BlendFunc, BufferBit, GlEnable, GlError};
+use crate::opengl::gl::Gl;
+use crate::opengl;
 
 use glfw::Glfw;
 use glfw::{Context, WindowEvent};

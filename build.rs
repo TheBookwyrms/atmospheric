@@ -36,7 +36,9 @@ impl From<OsString> for BuildError {
 fn main() -> Result<(), BuildError> {
 
 
+    println!("cargo:rustc-link-lib=static=glfw3");
     
+
     let project_dir = std::env::var("CARGO_MANIFEST_DIR")?;
     let out_dir = env::var("OUT_DIR")?;
     
@@ -85,5 +87,4 @@ fn main() -> Result<(), BuildError> {
     }
 
     Ok(())
-    //println!("cargo:rustc-link-lib=static=glfw3");
 }

@@ -4,7 +4,7 @@ use std::num::TryFromIntError;
 use std::ffi::NulError;
 
 use numeracy::enums::MatrixError;
-use crate::abstractions::TextureSetup;
+use crate::opengl::abstractions::TextureSetup;
 
 
 #[derive(Debug)] // Copy

@@ -1,5 +1,5 @@
-use crate::gl;
-use crate::gl::Gl;
+use crate::opengl::gl;
+use crate::opengl::gl::Gl;
 
 use std::os::raw::c_void;
 

@@ -1,9 +1,9 @@
 use std::time::{Duration, Instant};
 
 use crate::opengl::enums::{
-    BufferBit, DataFormat, DrawCall, DrawMode, DrawType, GlError, Object, ProgramSelect, UniformType
+    BufferBit, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
 };
-use crate::opengl::intermediate_opengl;
+use crate::opengl;
 use crate::opengl::abstractions::{Programs, WithObject};
 use numeracy::matrices::Matrix;
 

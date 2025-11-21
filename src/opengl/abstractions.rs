@@ -1,8 +1,8 @@
-use crate::gl::Gl;
+use crate::opengl::gl::Gl;
 use crate::enums::{
     ArrayObject, BufferObject, DataFormat, DrawCall, DrawMode, DrawType, GlError, InternalFormat, Object, ProgramSelect, ShaderType, TextureFilter, TextureMagFilter, TextureMinFilter, TextureTarget, TextureWrap, TextureWrapping, UniformType, UnpreparedTexture
 };
-use crate::{gl, intermediate_opengl, raw_opengl};
+use crate::opengl::{gl, intermediate_opengl, raw_opengl};
 
 use numeracy::matrices::Matrix;
 

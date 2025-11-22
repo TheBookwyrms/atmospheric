@@ -10,5 +10,6 @@ gl_generator = "0.14"
 
 
 [dependencies]
-numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", branch = "working_branch"}
+numeracy = {path = "../numeracy"}
+#numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", branch = "working_branch"}
 glfw = { version = "0.60", default-features = false, features = ["prebuilt-libs", "raw-window-handle-v0-6"]}

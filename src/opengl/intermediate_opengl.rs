@@ -2,11 +2,16 @@ use crate::opengl::gl;
 use crate::opengl::gl::Gl;
 use crate::opengl::raw_opengl;
 use crate::enums::{
-    ArrayObject, BlendFunc, BufferBit, BufferObject, DrawMode, DrawType, GlEnable, GlError, InternalFormat, Object, ShaderType, TextureFilter, TextureMagFilter, TextureMinFilter, TextureTarget, TextureWrap, TextureWrapping, UniformType
+    ArrayObject, BlendFunc, BufferBit,
+    BufferObject, DrawMode, DrawType,
+    GlEnable, GlError, InternalFormat,
+    Object, OpenglTexture, ShaderType,
+    TextureMagFilter, TextureMinFilter, TextureTarget,
+    TextureWrap, TextureWrapping, UniformType,
 };
 
 use std::ffi::CString;
-use std::os::raw::{self, c_void};
+use std::os::raw::c_void;
 
 
 
@@ -323,6 +328,42 @@ pub fn viewport(opengl:&Gl, width:i32, height:i32) {
 }
 
 
+pub fn active_texture(opengl:&Gl, texture:OpenglTexture) {
+    match texture {
+        OpenglTexture::Texture0  => raw_opengl::active_texture(opengl, gl::TEXTURE0),
+        OpenglTexture::Texture1  => raw_opengl::active_texture(opengl, gl::TEXTURE1),
+        OpenglTexture::Texture2  => raw_opengl::active_texture(opengl, gl::TEXTURE2),
+        OpenglTexture::Texture3  => raw_opengl::active_texture(opengl, gl::TEXTURE3),
+        OpenglTexture::Texture4  => raw_opengl::active_texture(opengl, gl::TEXTURE4),
+        OpenglTexture::Texture5  => raw_opengl::active_texture(opengl, gl::TEXTURE5),
+        OpenglTexture::Texture6  => raw_opengl::active_texture(opengl, gl::TEXTURE6),
+        OpenglTexture::Texture7  => raw_opengl::active_texture(opengl, gl::TEXTURE7),
+        OpenglTexture::Texture8  => raw_opengl::active_texture(opengl, gl::TEXTURE8),
+        OpenglTexture::Texture9  => raw_opengl::active_texture(opengl, gl::TEXTURE9),
+        OpenglTexture::Texture10 => raw_opengl::active_texture(opengl, gl::TEXTURE10),
+        OpenglTexture::Texture11 => raw_opengl::active_texture(opengl, gl::TEXTURE11),
+        OpenglTexture::Texture12 => raw_opengl::active_texture(opengl, gl::TEXTURE12),
+        OpenglTexture::Texture13 => raw_opengl::active_texture(opengl, gl::TEXTURE13),
+        OpenglTexture::Texture14 => raw_opengl::active_texture(opengl, gl::TEXTURE14),
+        OpenglTexture::Texture15 => raw_opengl::active_texture(opengl, gl::TEXTURE15),
+        OpenglTexture::Texture16 => raw_opengl::active_texture(opengl, gl::TEXTURE16),
+        OpenglTexture::Texture17 => raw_opengl::active_texture(opengl, gl::TEXTURE17),
+        OpenglTexture::Texture18 => raw_opengl::active_texture(opengl, gl::TEXTURE18),
+        OpenglTexture::Texture19 => raw_opengl::active_texture(opengl, gl::TEXTURE19),
+        OpenglTexture::Texture20 => raw_opengl::active_texture(opengl, gl::TEXTURE20),
+        OpenglTexture::Texture21 => raw_opengl::active_texture(opengl, gl::TEXTURE21),
+        OpenglTexture::Texture22 => raw_opengl::active_texture(opengl, gl::TEXTURE22),
+        OpenglTexture::Texture23 => raw_opengl::active_texture(opengl, gl::TEXTURE23),
+        OpenglTexture::Texture24 => raw_opengl::active_texture(opengl, gl::TEXTURE24),
+        OpenglTexture::Texture25 => raw_opengl::active_texture(opengl, gl::TEXTURE25),
+        OpenglTexture::Texture26 => raw_opengl::active_texture(opengl, gl::TEXTURE26),
+        OpenglTexture::Texture27 => raw_opengl::active_texture(opengl, gl::TEXTURE27),
+        OpenglTexture::Texture28 => raw_opengl::active_texture(opengl, gl::TEXTURE28),
+        OpenglTexture::Texture29 => raw_opengl::active_texture(opengl, gl::TEXTURE29),
+        OpenglTexture::Texture30 => raw_opengl::active_texture(opengl, gl::TEXTURE30),
+        OpenglTexture::Texture31 => raw_opengl::active_texture(opengl, gl::TEXTURE31),
+    }
+}
 
 pub fn texture_wrap(opengl:&Gl, target:TextureTarget, wrap:TextureWrap, wrapping:TextureWrapping) {
     let tex_target = match target {
@@ -372,33 +413,6 @@ pub fn texture_mag_filter(opengl:&Gl, texture:TextureTarget, filter:TextureMagFi
         TextureMagFilter::Nearest => gl::NEAREST,
     };
     raw_opengl::tex_parameter_i(opengl, tex_target, gl::TEXTURE_MAG_FILTER, filter_level as i32);
-}
-
-pub fn texture_filter(opengl:&Gl, texture:TextureTarget, filter:TextureFilter) {
-    let tex_target = match texture {
-        TextureTarget::Texture2D => gl::TEXTURE_2D
-    };
-
-    match filter {
-        TextureFilter::MinFilter(min) => {
-            let filter_level = match min {
-                TextureMinFilter::NearestMipmapLinear  => gl::NEAREST_MIPMAP_LINEAR,
-                TextureMinFilter::NearestMipmapNearest => gl::NEAREST_MIPMAP_NEAREST,
-                TextureMinFilter::LinearMipmapLinear  => gl::LINEAR_MIPMAP_LINEAR,
-                TextureMinFilter::LinearMipmapNearest => gl::LINEAR_MIPMAP_NEAREST,
-                TextureMinFilter::Linear => gl::LINEAR,
-                TextureMinFilter::Nearest => gl::NEAREST,
-            };
-            raw_opengl::tex_parameter_i(opengl, tex_target, gl::TEXTURE_MIN_FILTER, filter_level as i32);
-        },
-        TextureFilter::MagFilter(mag) => {
-            let filter_level = match mag {
-                TextureMagFilter::Linear => gl::LINEAR,
-                TextureMagFilter::Nearest => gl::NEAREST,
-            };
-            raw_opengl::tex_parameter_i(opengl, tex_target, gl::TEXTURE_MAG_FILTER, filter_level as i32);
-        },
-    }
 }
 
 pub fn texture_image(

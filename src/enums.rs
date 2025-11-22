@@ -1,10 +1,9 @@
-use std::iter;
+use glfw::{InitError, WindowEvent};
+use numeracy::enums::MatrixError;
 use std::str::Utf8Error;
 use std::num::TryFromIntError;
 use std::ffi::NulError;
 
-use numeracy::enums::MatrixError;
-use crate::opengl::abstractions::TextureSetup;
 
 
 #[derive(Debug)] // Copy
@@ -31,6 +30,10 @@ pub enum GlError {
     ObjectNotBound,
     ObjectAlreadyBound,
     TextureUnprepared(UnpreparedTexture),
+    AlreadyActivated(OpenglTexture),
+    AlreadyDeactivated(OpenglTexture),
+    NoProgramBound,
+    InvalidIndex(usize),
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -168,12 +171,6 @@ pub enum TextureWrapping {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-pub enum TextureFilter {
-    MinFilter(TextureMinFilter),
-    MagFilter(TextureMagFilter),
-}
-
-#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TextureMinFilter {
     NearestMipmapNearest,
     NearestMipmapLinear,
@@ -195,7 +192,7 @@ pub enum InternalFormat {
     RGBA,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum OpenglTexture {
     Texture0,
     Texture1,
@@ -229,4 +226,42 @@ pub enum OpenglTexture {
     Texture29,
     Texture30,
     Texture31,
+}
+#[derive(Debug)]
+pub enum ContextError {
+    NewGLFWEventDetected(WindowEvent),
+    GLFWinitError(InitError),
+    GLFWNoWindowCreated,
+    GLFWResizeBoundsError((i32, i32)),
+    GLError(GlError),
+    TryFromIntError(TryFromIntError),
+    DataLengthError(usize),
+    MatrixError(MatrixError),
+}
+
+impl From<GlError> for ContextError {
+    fn from(value: GlError) -> Self {
+        Self::GLError(value)
+    }
+}
+
+impl From<MatrixError> for ContextError {
+    fn from(value: MatrixError) -> Self {
+        Self::MatrixError(value)
+    }
+}
+
+
+pub enum ImageFormat {
+    JPEG,
+    PNG,
+}
+
+impl Into<InternalFormat> for ImageFormat {
+    fn into(self) -> InternalFormat {
+        match self {
+            ImageFormat::JPEG => InternalFormat::RGB,
+            ImageFormat::PNG => InternalFormat::RGBA,
+        }
+    }
 }

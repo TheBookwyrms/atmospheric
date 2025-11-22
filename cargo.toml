@@ -13,3 +13,6 @@ gl_generator = "0.14"
 numeracy = {path = "../numeracy"}
 #numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", branch = "working_branch"}
 glfw = { version = "0.60", default-features = false, features = ["prebuilt-libs", "raw-window-handle-v0-6"]}
+
+zune-jpeg = "=0.4.21"
+zune-png = "0.4.10"

@@ -1,31 +1,32 @@
 use std::time::{Duration, Instant};
 
-use crate::opengl::enums::{
+use crate::enums::{
     BufferBit, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
 };
 use crate::opengl;
-use crate::opengl::abstractions::{Programs, WithObject};
+use crate::opengl::abstractions::{Programs, Textures, WithObject};
 use numeracy::matrices::Matrix;
 
 use glfw;
 use glfw::{Action, Key};
-use crate::errors::RenderError;
+use crate::enums::ContextError;
 use crate::{camera::Camera};
 use crate::lighting::Lighting;
 use crate::window::Window;
 
 
-pub struct Render {
+pub struct Context {
     pub window:Window,
     pub camera:Camera,
     pub lighting:Lighting,
     pub programs:Programs,
+    pub textures:Textures,
     pub paused:bool,
     pub pause_time:Instant,
     pub current_time:Instant,
 }
-impl Render {
-    pub fn default() -> Result<Self, RenderError> {
+impl Context {
+    pub fn default() -> Result<Self, ContextError> {
         let window = Window::new_opengl()?;
         let camera = Camera::new();
         let lighting = Lighting::new();
@@ -33,7 +34,7 @@ impl Render {
         let programs = Programs::compile(&window.opengl)?;
 
         Ok(Self {
-            window, camera, lighting, programs:programs,
+            window, camera, lighting, programs:programs, textures:Textures::new_empty(),
             paused:false, pause_time:Instant::now(), current_time:Instant::now(),
          })
     }
@@ -47,28 +48,19 @@ impl Render {
         self.window.set_polling();
     }
 
-    pub fn begin_render_actions(&self) -> Result<(), RenderError> {
+    pub fn begin_render_actions(&self) -> Result<(), ContextError> {
         self.window.clear_to_colour(self.camera.background_colour, 1.0)?;
         self.window.clear(vec![BufferBit::ColourBufferBit, BufferBit::DepthBufferBit]);
         Ok(())
 
     }
-
-    fn clear_bindings(&mut self) {
-        self.programs.disuse_program(&self.window.opengl);
-        //WithObject::unbind(&self.window.opengl, Object::VBO);
-        //WithObject::unbind(&self.window.opengl, Object::VAO);
-        //WithObject::unbind(&self.window.opengl, Object::EBO);
-        //WithObject::unbind(&self.window.opengl, Object::Texture2D);
-        //opengl::high_level_abstractions::WithObject::program(&self.window.opengl, 0);
-    }
     
-    pub fn end_render_actions(&mut self) -> Result<(), RenderError> {
+    pub fn end_render_actions(&mut self) -> Result<(), ContextError> {
         
+        self.textures.deactivate_all(&self.window.opengl);
+        self.programs.disuse_program(&self.window.opengl);
 
-        self.clear_bindings();
-
-
+        
         let dt = match Instant::now().duration_since(self.current_time).as_secs_f32() {
             0.0 => 0.0,
             t => t,};
@@ -87,7 +79,7 @@ impl Render {
 
 
     pub fn create_vao_vbo_ebo(&self, vertices:&Matrix<f32>, indices:&Matrix<i32>, format:DataFormat
-    ) -> Result<(u32, u32, u32), RenderError> {
+    ) -> Result<(u32, u32, u32), ContextError> {
 
         let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
         
@@ -103,7 +95,7 @@ impl Render {
     }
 
 
-    pub fn create_vao_vbo(&self, data:&Matrix<f32>, format:DataFormat) -> Result<(u32, u32), RenderError> {
+    pub fn create_vao_vbo(&self, data:&Matrix<f32>, format:DataFormat) -> Result<(u32, u32), ContextError> {
         let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
         let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
 
@@ -120,7 +112,7 @@ impl Render {
     //}
 
 
-    pub fn use_program(&mut self, program_type:ProgramSelect) -> Result<(), RenderError> {
+    pub fn use_program(&mut self, program_type:ProgramSelect) -> Result<(), ContextError> {
 
         self.programs.use_program(&self.window.opengl, program_type)?;
 
@@ -139,7 +131,7 @@ impl Render {
         Ok(())
     }
 
-    fn set_orthographic_camera_uniforms(&self) -> Result<(), RenderError> {
+    fn set_orthographic_camera_uniforms(&self) -> Result<(), ContextError> {
         // opengl, id, uniform_name, uniform_type, value
         self.programs.set_uniform(&self.window.opengl, "world_transform", UniformType::Mat4, Matrix::opengl_to_right_handed())?;
         self.programs.set_uniform(&self.window.opengl, "orthographic_projection", UniformType::Mat4,
@@ -155,7 +147,7 @@ impl Render {
 
 
 
-    fn set_blinn_phong_uniforms(&self) -> Result<(), RenderError> {
+    fn set_blinn_phong_uniforms(&self) -> Result<(), ContextError> {
         self.programs.set_uniform(&self.window.opengl,"ambient_strength", UniformType::Float,
             Matrix::from_scalar(self.lighting.ambient_strength))?;
         self.programs.set_uniform(&self.window.opengl,"ambient_colour", UniformType::Vec3, 
@@ -185,7 +177,7 @@ impl Render {
 
 
 
-    fn poll_and_perform_polled_events(&mut self) -> Result<(), RenderError> {
+    fn poll_and_perform_polled_events(&mut self) -> Result<(), ContextError> {
         self.poll_events();
         for (_, event) in glfw::flush_messages(&self.window.events) {
             match event {
@@ -256,7 +248,7 @@ impl Render {
 
                 glfw::WindowEvent::Size(width, height) => {
                     match (width==0) || (height==0) {
-                        true => Err(RenderError::GLFWResizeBoundsError((width, height))),
+                        true => Err(ContextError::GLFWResizeBoundsError((width, height))),
                         false => {
                             self.window.aspect_ratio = width as f32/height as f32;
                             Ok(opengl::intermediate_opengl::viewport(&self.window.opengl, width, height))
@@ -274,7 +266,7 @@ impl Render {
                 glfw::WindowEvent::Maximize(_) => {Ok(())},
                 glfw::WindowEvent::Refresh => {Ok(())},
                 glfw::WindowEvent::CursorEnter(_) => {Ok(())},
-                _ => Err(RenderError::NewGLFWEventDetected(event)),
+                _ => Err(ContextError::NewGLFWEventDetected(event)),
             }?;
         }
         Ok(())

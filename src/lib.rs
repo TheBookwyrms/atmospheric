@@ -1,12 +1,12 @@
 extern crate glfw;
 
-mod opengl;
+pub mod opengl;
 
-pub mod errors;
+pub mod enums;
+
+pub mod image_processing;
 
 pub mod camera;
 pub mod lighting;
-pub mod render;
+pub mod context;
 pub mod window;
-
-pub use crate::opengl::enums;

@@ -1,4 +1,4 @@
-use crate::opengl::enums::{BlendFunc, BufferBit, GlEnable, GlError};
+use crate::enums::{BlendFunc, BufferBit, GlEnable, GlError};
 use crate::opengl::gl::Gl;
 use crate::opengl;
 
@@ -7,7 +7,7 @@ use glfw::{Context, WindowEvent};
 use glfw::{PWindow, GlfwReceiver};
 use glfw::fail_on_errors;
 
-use crate::errors::RenderError;
+use crate::enums::ContextError;
 
 pub struct Window {
     pub glfw:Glfw,
@@ -19,7 +19,7 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new_opengl() -> Result<Window, RenderError> {
+    pub fn new_opengl() -> Result<Window, ContextError> {
         let (width, height) = (450, 450);
         let window_name = "hello, window!";
 
@@ -36,10 +36,10 @@ impl Window {
                                                                         );
                         Ok(Window { glfw, window, events, opengl, last_cursor_pos:[0.0, 0.0], aspect_ratio:width as f32 / height as f32 })
                     },
-                    None => Err(RenderError::GLFWNoWindowCreated),
+                    None => Err(ContextError::GLFWNoWindowCreated),
                 }
             },
-            Err(err) => Err(RenderError::GLFWinitError(err)),
+            Err(err) => Err(ContextError::GLFWinitError(err)),
         }
     }
 

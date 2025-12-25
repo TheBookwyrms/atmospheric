@@ -357,6 +357,7 @@ impl Programs {
                 )?;
                 Ok(shader_id)
             },
+            ProgramSelect::Custom(_) => Err(GlError::InvalidCustomProgramSelect)
         }
     }
 
@@ -375,21 +376,27 @@ impl Programs {
             ProgramSelect::SelectSimpleOrthographic => {
                 intermediate_opengl::use_program(opengl, self.simple_orthographic_shader)?;
                 self.current_program = Some(self.simple_orthographic_shader);
-                self.current_program_type = Some(ProgramSelect::SelectSimpleOrthographic);
+                self.current_program_type = Some(program);
                 Ok(())
             },
             ProgramSelect::SelectBlinnPhongOrthographic => {
                 intermediate_opengl::use_program(opengl, self.blinn_phone_orthographic_shader)?;
                 self.current_program = Some(self.blinn_phone_orthographic_shader);
-                self.current_program_type = Some(ProgramSelect::SelectBlinnPhongOrthographic);
+                self.current_program_type = Some(program);
                 Ok(())
             },
             ProgramSelect::SelectSimpleTexture => {
                 intermediate_opengl::use_program(opengl, self.simple_texture_shader)?;
                 self.current_program = Some(self.simple_texture_shader);
-                self.current_program_type = Some(ProgramSelect::SelectSimpleTexture);
+                self.current_program_type = Some(program);
                 Ok(())
             },
+            ProgramSelect::Custom(id) => {
+                intermediate_opengl::use_program(opengl, id)?;
+                self.current_program = Some(id);
+                self.current_program_type = Some(program);
+                Ok(())
+            }
         }
     }
 
@@ -427,6 +434,7 @@ impl Programs {
                     ProgramSelect::SelectSimpleTexture => {
                         if format == DataFormat::Position3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) }
                     },
+                    ProgramSelect::Custom(_) => Ok(())
                 }
             },
         }?;
@@ -441,6 +449,13 @@ impl Programs {
 
     }
 }
+
+
+pub struct Uniform<'a> {
+    pub name:&'a str,
+    pub uniform_type:UniformType,
+}
+
 
 
 pub struct Textures {
@@ -538,7 +553,7 @@ impl<'a> TextureSetup<'a> {
 
 
         TextureSetup { opengl:opengl, texture: texture_id, texture_type,
-                        width:image.width, height:image.height, pixels:image.pixels, image_format:image.format.into(),
+                        width:image.width, height:image.height, pixels:image.data, image_format:image.format.into(),
                         wrapping_set:false, filters_set:false,
                         texture_image_created:false, mipmap_created:false }
     }

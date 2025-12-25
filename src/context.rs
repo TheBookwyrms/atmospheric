@@ -3,8 +3,8 @@ use std::time::{Duration, Instant};
 use crate::enums::{
     BufferBit, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
 };
-use crate::opengl;
-use crate::opengl::abstractions::{Programs, Textures, WithObject};
+use crate::opengl::{self, abstractions, intermediate_opengl, raw_opengl};
+use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
 use numeracy::matrices::Matrix;
 
 use glfw;
@@ -111,6 +111,18 @@ impl Context {
     //    Ok(self.programs.draw(&self.window.opengl, call, mode, vao, data, format)?)
     //}
 
+    pub fn set_custom_uniform<T:Clone>(&self, program_id:u32, uniform:Uniform, value:Matrix<T>) -> Result<(), GlError> {
+        intermediate_opengl::set_uniform(&self.window.opengl, program_id, uniform.name, uniform.uniform_type, value.as_ptr())
+    }
+
+    pub fn compile_custom_program(&mut self, vertex_text:&str, fragment_text:&str) -> Result<u32, GlError> {
+        opengl::abstractions::Programs::compile_program_from_text(&self.window.opengl, vertex_text, fragment_text)
+    }
+
+    pub fn use_custom_program(&mut self, shader_id:u32) -> Result<(), GlError> {
+        self.programs.use_program(&self.window.opengl, ProgramSelect::Custom(shader_id))
+    }
+
 
     pub fn use_program(&mut self, program_type:ProgramSelect) -> Result<(), ContextError> {
 
@@ -126,12 +138,13 @@ impl Context {
             },
             ProgramSelect::SelectSimpleTexture => {
                 self.set_orthographic_camera_uniforms()?;
-            }
+            },
+            ProgramSelect::Custom(_) => Err(GlError::InvalidCustomProgramSelect)?
         }
         Ok(())
     }
 
-    fn set_orthographic_camera_uniforms(&self) -> Result<(), ContextError> {
+    pub fn set_orthographic_camera_uniforms(&self) -> Result<(), ContextError> {
         // opengl, id, uniform_name, uniform_type, value
         self.programs.set_uniform(&self.window.opengl, "world_transform", UniformType::Mat4, Matrix::opengl_to_right_handed())?;
         self.programs.set_uniform(&self.window.opengl, "orthographic_projection", UniformType::Mat4,

@@ -34,6 +34,7 @@ pub enum GlError {
     AlreadyDeactivated(OpenglTexture),
     NoProgramBound,
     InvalidIndex(usize),
+    InvalidCustomProgramSelect
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -64,6 +65,7 @@ pub enum ProgramSelect {
     SelectBlinnPhongOrthographic,
     SelectSimpleOrthographic,
     SelectSimpleTexture,
+    Custom(u32)
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -251,10 +253,11 @@ impl From<MatrixError> for ContextError {
     }
 }
 
-
+#[derive(Clone, Copy)]
 pub enum ImageFormat {
     JPEG,
     PNG,
+    PPMP3
 }
 
 impl Into<InternalFormat> for ImageFormat {
@@ -262,6 +265,21 @@ impl Into<InternalFormat> for ImageFormat {
         match self {
             ImageFormat::JPEG => InternalFormat::RGB,
             ImageFormat::PNG => InternalFormat::RGBA,
+            ImageFormat::PPMP3 => InternalFormat::RGB,
+        }
+    }
+}
+
+
+
+pub enum PPMType {
+    P3,
+}
+
+impl Into<ImageFormat> for PPMType {
+    fn into(self) -> ImageFormat {
+        match self {
+            PPMType::P3 => ImageFormat::PPMP3,
         }
     }
 }

@@ -9,6 +9,7 @@ use numeracy::matrices::Matrix;
 
 use glfw;
 use glfw::{Action, Key};
+use numeracy::vectors::Vector;
 use crate::enums::ContextError;
 use crate::{camera::Camera};
 use crate::lighting::Lighting;
@@ -146,15 +147,22 @@ impl Context {
 
     pub fn set_orthographic_camera_uniforms(&self) -> Result<(), ContextError> {
         // opengl, id, uniform_name, uniform_type, value
-        self.programs.set_uniform(&self.window.opengl, "world_transform", UniformType::Mat4, Matrix::opengl_to_right_handed())?;
+
+        // model
+        self.programs.set_uniform(&self.window.opengl, "world_transform", UniformType::Mat4,
+            Matrix::opengl_to_right_handed())?;
+
+        // view
+        self.programs.set_uniform(&self.window.opengl, "camera_transformation", UniformType::Mat4,
+            //self.camera.get_camera_transform()?)?;
+            self.camera.get_camera_view_matrix(
+                self.window.get_time_since_glfw_init(),
+            )?)?;
+
+        // projection
         self.programs.set_uniform(&self.window.opengl, "orthographic_projection", UniformType::Mat4,
             self.camera.get_orthographic_projection(self.window.aspect_ratio))?;
-        let camera_transform = match self.camera.get_camera_transform() {
-            Ok(mat) => Ok(mat),
-            Err(error) => Err(GlError::MatrixError(error)),
-        }?;
-        self.programs.set_uniform(&self.window.opengl, "camera_transformation", UniformType::Mat4,
-            camera_transform)?;
+
         Ok(())
     }
 
@@ -242,16 +250,14 @@ impl Context {
                     let dy = ypos as f32 - self.window.last_cursor_pos[1];
 
                     if self.camera.panning {
-                        self.camera.pan_xyz.0 += dx * self.camera.pan_sensitivity * self.camera.zoom;
-                            // add dx
-                        self.camera.pan_xyz.1 -= dy * self.camera.pan_sensitivity * self.camera.zoom;
-                            // subtract dy
+                        let sensitivity = self.camera.pan_sensitivity * self.camera.zoom;
+                        self.camera.pan_xyz += Vector::from_1darray([dx, -1.0*dy, 0.0])
+                                                        .multiply_by_constant(sensitivity);
                     }
                     if self.camera.angling {
-                        self.camera.angle_xyz.0 += dy * self.camera.angle_sensitivity * self.camera.zoom;
-                            // y and x are swapped
-                        self.camera.angle_xyz.1 += dx * self.camera.angle_sensitivity * self.camera.zoom;
-                            // y and x are swapped
+                        let sensitivity = self.camera.angle_sensitivity * self.camera.zoom;
+                        self.camera.angle_xyz += Vector::from_1darray([dy, dx, 0.0])
+                                                        .multiply_by_constant(sensitivity);
                     }
 
                     self.window.last_cursor_pos = [xpos as f32, ypos as f32];

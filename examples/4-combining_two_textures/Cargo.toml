@@ -1,0 +1,14 @@
+[package]
+name = "rendering_stuff_rs"
+version = "1.0.0"
+edition = "2024"
+
+# run `cargo depgraph --all-deps` to get graphviz source which can graph all dependencies
+
+
+[dependencies]
+numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", branch = "working_branch"}
+atmospheric = { git = "https://github.com/TheBookwyrms/atmospheric/commit/d2d7b456b10a8027ec651eca048dd84ac9691130" }
+
+#ppm_viewer = {path = "ppm_viewer"}
+ray_tracer = {path = "ray_tracer"}

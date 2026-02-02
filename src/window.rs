@@ -45,6 +45,7 @@ impl Window {
 
     // relabel subaspect functions to Window functions        
     pub fn poll_events(&mut self)  { self.glfw.poll_events(); }
+    pub fn get_time_since_glfw_init(&self) -> f64 { self.glfw.get_time()}
 
     pub fn set_polling(&mut self)  { self.window.set_all_polling(true); }
     pub fn swap_buffers(&mut self) { self.window.swap_buffers(); }

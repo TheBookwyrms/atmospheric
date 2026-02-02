@@ -12,7 +12,10 @@ TO DO
 - [ ] save renders as image (from textures?)
 - [ ] gui stuff
 - [ ] convolution kernel postprocessing
-- [ ] fix camera viewing position at correct point, without seeing behind camera
+- [x] fix camera viewing position at correct point, without seeing behind camera
+    - [ ] harmonize all camera and matrix code together
+    - [ ] neaten camera viewing code
+    - [ ] add camera enums for ease of use
 - [ ] text rendering
 
 
@@ -25,3 +28,5 @@ project ideas
     - shear force
     - bending moment
     - visualise it in 3D
+- [ ] doppler effect simulator and other cool stuff (trains?)
+- [ ] cool stuff with parametric curves

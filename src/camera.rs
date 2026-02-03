@@ -67,22 +67,25 @@ impl Camera {
             [  0.0,   0.0, -1.0*(f+n)/(f-n), 1.0],
         ]);
 
-        // // what i had from long ago, origin unknown
-        // let orthographic_projection = Matrix::from_2darray([
-        //     [2.0/(r-l), 0.0, 0.0, 0.0],
-        //     [0.0, 2.0/(t-b), 0.0, 0.0],
-        //     [0.0, 0.0, -2.0/(f-n), 0.0],
-        //     [-1.0*(r+l)/(r-l), -1.0*(t+b)/(t-b), -1.0*(f+n)/(f-n), 1.0],
-        // ]);
 
 
         
-        //let perspective_projection = Matrix::from_2darray([
-        //    [n/r, 0.0, 0.0, 0.0],
-        //    [0.0, n/t, 0.0, 0.0],
-        //    [0.0, 0.0, -1.0*(f+n)/(f-n),-1.0],
-        //    [0.0, 0.0, -2.0*f*n/(f-n), 0.0],
-        //]);
+        // let perspective_projection = Matrix::from_2darray([
+        //     [n/r, 0.0, 0.0, 0.0],
+        //     [0.0, n/t, 0.0, 0.0],
+        //     //[0.0, 0.0, -1.0*(f+n)/(f-n),-1.0],
+        //     //[0.0, 0.0, -2.0*f*n/(f-n), 0.0],
+        //     [0.0, 0.0, -1.0*(f+n)/(f-n),-2.0*f*n/(f-n)],
+        //     [0.0, 0.0, -1.0, 0.0],
+        // ]);
+        // let perspective_projection = Matrix::from_2darray([
+        //     [n/r, 0.0, 0.0, 0.0],
+        //     [0.0, n/t, 0.0, 0.0],
+        //     [0.0, 0.0, -1.0,-2.0*n],
+        //     [0.0, 0.0, -1.0, 0.0],
+        //     //[0.0, 0.0, -1.0,-1.0],
+        //     //[0.0, 0.0, -2.0*n, 0.0],
+        // ]);
 
         orthographic_projection
         //perspective_projection

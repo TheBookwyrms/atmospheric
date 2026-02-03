@@ -17,6 +17,7 @@ TO DO
     - [ ] neaten camera viewing code
     - [ ] add camera enums for ease of use
 - [ ] text rendering
+- [ ] add Module system to allow for pre-packaged settings such as Shaders, Camera pre-sets, and others
 
 
 project ideas

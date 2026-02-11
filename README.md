@@ -22,7 +22,9 @@ TO DO
 
 project ideas
 - [ ] recreate all old opengl testing projects in rust
-- [ ] gravity in shaders
+- [ ] n-body planet simulation
+    - [ ] with gravity in shaders
+    - [ ] barnes-hut gravity simulation
 - [ ] wave simulator
 - [ ] matrix structure analysis (statics/frames + trusses/loadings)
     - internal forces and stresses

@@ -1,10 +1,8 @@
-use std::fs::{self, File};
-use std::io::Read;
+use std::fs;
 
 use crate::enums::{ImageFormat, PPMType};
 
 use numeracy::matrices::Matrix;
-use numeracy::enums::MatrixDataTypes;
 
 use zune_jpeg;
 use zune_png;
@@ -87,7 +85,7 @@ impl Image {
         let (pixels, width, height, nchannels) = Self::get_data_from_bytes(file_bytes, format);
 
         
-        let pixels_matrix = Matrix {shape:vec![width*nchannels, height], array:pixels.clone(), dtype:MatrixDataTypes::U8};
+        let pixels_matrix = Matrix {shape:vec![width*nchannels, height], array:pixels.clone()};
         let data = if flip {
             pixels_matrix.flip_vertically().unwrap()
         } else {

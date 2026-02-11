@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use crate::enums::{
-    BufferBit, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
+    BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
 };
 use crate::opengl::{self, abstractions, intermediate_opengl, raw_opengl};
 use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
@@ -29,7 +29,8 @@ pub struct Context {
 impl Context {
     pub fn default() -> Result<Self, ContextError> {
         let window = Window::new_opengl()?;
-        let camera = Camera::new();
+        let camera = Camera::new(CameraMode::PointOfView);
+        //let camera = Camera::new(CameraMode::Encompassing);
         let lighting = Lighting::new();
 
         let programs = Programs::compile(&window.opengl)?;
@@ -155,9 +156,7 @@ impl Context {
         // view
         self.programs.set_uniform(&self.window.opengl, "camera_transformation", UniformType::Mat4,
             //self.camera.get_camera_transform()?)?;
-            self.camera.get_camera_view_matrix(
-                self.window.get_time_since_glfw_init(),
-            )?)?;
+            self.camera.get_camera_view_matrix()?)?;
 
         // projection
         self.programs.set_uniform(&self.window.opengl, "orthographic_projection", UniformType::Mat4,

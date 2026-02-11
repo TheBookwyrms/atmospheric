@@ -283,3 +283,9 @@ impl Into<ImageFormat> for PPMType {
         }
     }
 }
+
+
+pub enum CameraMode {
+    Encompassing,
+    PointOfView,
+}

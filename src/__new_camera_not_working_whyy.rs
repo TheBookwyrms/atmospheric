@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use numeracy::matrices::Matrix;
 use numeracy::vectors::Vector;
 use numeracy::enums::MatrixError;
@@ -13,26 +11,45 @@ pub struct CameraInfoMatrix {
     /// column 2 = camera target
     /// column 3 = camera right
     /// column 4 = camera up
-    pub matrix:Matrix<f32>
+    pub camera_matrix:Matrix<f32>
 }
 
-//impl CameraInfoMatrix {
-//    pub fn instantiate_initial_conditions(
-//        position:Vector<f32>,
-//        target:Vector<f32>,
-//        right:Vector<f32>,
-//        up:Vector<f32>,
-//    ) -> Self {
-//        self {
-//            matrix : Matrix::from_2darray([
-//                position.array,
-//                target.array,
-//                right.array,
-//                up.array
-//            ])
-//        }
-//    }
-//}
+impl CameraInfoMatrix {
+    pub fn instantiate(
+        position:Vector<f32>,
+        target:Vector<f32>,
+        right:Vector<f32>,
+        up:Vector<f32>,
+    ) -> Self {
+        Self {
+            camera_matrix : Matrix {
+                shape:vec![4, 4],
+                array:[
+                    position.array,
+                    target.array,
+                    right.array,
+                    up.array
+                ].concat()
+            }
+        }
+    }
+    pub fn matmul_by_left(&mut self, left:Matrix<f32>) -> Result<(), MatrixError> {
+        self.camera_matrix = left.matmul(&self.camera_matrix)?;
+        Ok(())
+    }
+    pub fn get_camera_position(&self) -> Vector<f32> {
+        self.camera_matrix.get_col(0).unwrap().to_vector().unwrap()
+    }
+    pub fn get_camera_target(&self) -> Vector<f32> {
+        self.camera_matrix.get_col(1).unwrap().to_vector().unwrap()
+    }
+    pub fn get_camera_right(&self) -> Vector<f32> {
+        self.camera_matrix.get_col(2).unwrap().to_vector().unwrap()
+    }
+    pub fn get_camera_up(&self) -> Vector<f32> {
+        self.camera_matrix.get_col(3).unwrap().to_vector().unwrap()
+    }
+}
 
 
 
@@ -51,10 +68,20 @@ pub struct Camera {
     pub camera_up:Vector<f32>,
     pub camera_right:Vector<f32>,
     pub camera_mode:CameraMode,
+    //pub camera_info_matrix:CameraInfoMatrix
 }
 
 impl Camera {
     pub fn new(camera_mode:CameraMode) -> Camera {
+        //let camera_target = Vector::from_1darray([0.0, 0.0, -10.0]);
+        //let camera_position = Vector::from_1darray([0.0, 0.0, 10.0]);
+
+        let camera_position = Vector::from_1darray([0.0, 0.0, -10.0]);
+        let camera_target = Vector::from_1darray([0.0, 0.0, 10.0]);
+        // //let camera_target = Vector::from_1darray([0.0, 0.0, 0.0]);
+        
+        let camera_up = Vector::from_1darray([0.0, 1.0, 0.0]);
+        let camera_right = Vector::from_1darray([1.0, 0.0, 0.0]);
         Camera {
             render_distance:512,
             //angle_xyz:Vector::from_1darray([90.0, 0.0, 0.0]),
@@ -67,13 +94,15 @@ impl Camera {
             angle_sensitivity:0.01,
             panning:false, angling:false,
             background_colour:(0.5, 0.5, 0.5),
-            //camera_position:Vector::from_1darray([0.0, 0.0, -10.0]),
-            //camera_target:Vector::from_1darray([0.0, 0.0, 10.0]),
-            camera_position: Vector::from_1darray([0.0, 0.0,  10.0]),
-            camera_target  : Vector::from_1darray([0.0, 0.0, -10.0]),
-            camera_up      : Vector::from_1darray([0.0, 1.0,   0.0]),
-            camera_right   : Vector::from_1darray([1.0, 0.0,   0.0]),
+            camera_position:camera_position.clone(),
+            camera_target:camera_target.clone(),
+            //camera_target:camera_target.clone(),
+            camera_up:camera_up.clone(),
+            camera_right:camera_right.clone(),
             camera_mode:camera_mode,
+            //camera_info_matrix:CameraInfoMatrix::instantiate(
+            //    camera_position, camera_target, camera_right, camera_up
+            //),
         }
     }
 
@@ -167,25 +196,19 @@ impl Camera {
 
     pub fn rotation_relative_to_the_target(&mut self, rotation:Vector<f32>) -> Result<(), MatrixError> {
         let rotate_about_target = Matrix::rotate_around_p(self.camera_target.clone(), rotation)?;
-        self.camera_position = rotate_about_target.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
-        self.camera_target = rotate_about_target.matmul(&self.camera_target.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
-        self.camera_up = rotate_about_target.matmul(&self.camera_up.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
-        self.camera_right = rotate_about_target.matmul(&self.camera_right.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
+        self.camera_position = rotate_about_target.matmul(&self.camera_position.clone().to_matrix())?.to_vector()?;
+        self.camera_target = rotate_about_target.matmul(&self.camera_target.clone().to_matrix())?.to_vector()?;
+        self.camera_up = rotate_about_target.matmul(&self.camera_up.clone().to_matrix())?.to_vector()?;
+        self.camera_right = rotate_about_target.matmul(&self.camera_right.clone().to_matrix())?.to_vector()?;
         Ok(())
     }
 
-
-    /// VERIFIED
-    /// VERIFIED
-    /// VERIFIED
-    /// VERIFIED
-    /// VERIFIED
     pub fn rotation_relative_to_the_origin(&mut self, rotation:Vector<f32>) -> Result<(), MatrixError> {
         let rotate_about_origin = Matrix::rotate(rotation)?;
-        self.camera_position = Vector::from_slice(&rotate_about_origin.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
-        self.camera_target = Vector::from_slice(&rotate_about_origin.matmul(&self.camera_target.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
-        self.camera_up = Vector::from_slice(&rotate_about_origin.matmul(&self.camera_up.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
-        self.camera_right = Vector::from_slice(&rotate_about_origin.matmul(&self.camera_right.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        self.camera_position = rotate_about_origin.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 4])?)?.to_vector()?;
+        self.camera_target   = rotate_about_origin.matmul(  &self.camera_target.clone().to_matrix().reshape(vec![1, 4])?)?.to_vector()?;
+        self.camera_up       = rotate_about_origin.matmul(      &self.camera_up.clone().to_matrix().reshape(vec![1, 4])?)?.to_vector()?;
+        self.camera_right    = rotate_about_origin.matmul(   &self.camera_right.clone().to_matrix().reshape(vec![1, 4])?)?.to_vector()?;
         Ok(())
     }
 
@@ -227,7 +250,6 @@ impl Camera {
     /// VERIFIED
     /// VERIFIED
     /// VERIFIED
-    /// VERIFIED
     pub fn translate_relative_to_the_target(&mut self, forward:f32, right:f32, up:f32) -> Result<(), MatrixError> {
 
         
@@ -238,20 +260,15 @@ impl Camera {
         // then the camera is flipped (looking back to the target)
         // and the right is flipped as well, to ensure right handed axes
 
-        println!("");
-        println!("begin");
         let current_direction_vector = (self.camera_position.clone()-self.camera_target.clone())?;
         let current_direction_unit = current_direction_vector.normalise()?;
-        println!("d1 {:?}", current_direction_unit);
 
         self.camera_position += current_direction_unit.multiply_by_constant(forward);
                 
         let new_direction = (self.camera_position.clone()-self.camera_target.clone())?.normalise()?;
         if new_direction == current_direction_unit.multiply_by_constant(-1.0) {
-            println!("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
             self.camera_right = self.camera_right.multiply_by_constant(-1.0);
         }
-
 
         
 
@@ -278,10 +295,7 @@ impl Camera {
         self.camera_position = new_position_vector;
 
         let new_camera_dir = (self.camera_position.clone() - self.camera_target.clone())?;
-        println!("d2 {:?}", new_camera_dir.normalise()?);
-        println!("r  {:?}, u {:?}", self.camera_right, self.camera_up);
-        //self.camera_right = self.camera_up.cross_product(&new_camera_dir)?.normalise()?;
-        self.camera_right = new_camera_dir.cross_product(&self.camera_up)?.normalise()?;
+        self.camera_right = self.camera_up.cross_product(&new_camera_dir)?.normalise()?;
 
 
 
@@ -309,14 +323,7 @@ impl Camera {
         self.camera_position = new_position_vector;
 
         let new_camera_dir = (self.camera_position.clone() - self.camera_target.clone())?;
-        
-        println!("d3 {:?}", new_camera_dir.normalise()?);
-        println!("r  {:?}, u {:?}", self.camera_right, self.camera_up);
         self.camera_up = self.camera_right.cross_product(&new_camera_dir)?.normalise()?;
-        //self.camera_up = new_camera_dir.cross_product(&self.camera_right)?.normalise()?;
-        println!("r  {:?}, u {:?}", self.camera_right, self.camera_up);
-        println!("end");
-        println!("");
 
 
         Ok(())

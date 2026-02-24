@@ -289,3 +289,9 @@ pub enum CameraMode {
     Encompassing,
     PointOfView,
 }
+
+pub enum CameraAxis {
+    Forward,
+    Right,
+    Up,
+}

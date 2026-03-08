@@ -266,7 +266,12 @@ impl Context {
 
                 glfw::WindowEvent::Size(width, height) => {
                     match (width==0) || (height==0) {
-                        true => Err(ContextError::GLFWResizeBoundsError((width, height))),
+                        true => {
+                            //glfw::Window::iconify(&mut self);
+                            self.window.window.iconify();
+                            Ok(())
+                        },
+                        //true => Err(ContextError::GLFWResizeBoundsError((width, height))),
                         false => {
                             self.window.aspect_ratio = width as f32/height as f32;
                             Ok(opengl::intermediate_opengl::viewport(&self.window.opengl, width, height))

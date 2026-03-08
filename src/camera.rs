@@ -1,4 +1,4 @@
-use std::f32::consts::E;
+use std::{clone, f32::consts::{E, SQRT_2}};
 
 use numeracy::matrices::Matrix;
 use numeracy::vectors::Vector;
@@ -63,6 +63,7 @@ impl Camera {
             //pan_xyz:(0.0, 0.0, -80.0),
             //zoom:20.0,
             zoom:5.0,
+            //zoom:1.0,
             pan_sensitivity:0.001,
             angle_sensitivity:0.01,
             panning:false, angling:false,
@@ -156,21 +157,100 @@ impl Camera {
         self.camera_target   += translation;
     }
 
-    pub fn rotation_independant_of_external_information(&mut self, rotation:Vector<f32>) -> Result<(), MatrixError> {
-        let rotate_about_camera = Matrix::rotate_around_p(self.camera_position.clone(), rotation)?;
-        self.camera_position = rotate_about_camera.matmul(&self.camera_position.clone().to_matrix())?.to_vector()?;
-        self.camera_target = rotate_about_camera.matmul(&self.camera_target.clone().to_matrix())?.to_vector()?;
-        self.camera_up = rotate_about_camera.matmul(&self.camera_up.clone().to_matrix())?.to_vector()?;
-        self.camera_right = rotate_about_camera.matmul(&self.camera_right.clone().to_matrix())?.to_vector()?;
+
+
+    /// VERIFIED
+    /// VERIFIED
+    /// VERIFIED
+    /// VERIFIED
+    /// VERIFIED
+    pub fn rotation_about_origin_on_arbitrary_axis(&mut self, axis:Vector<f32>, rotation:f32) -> Result<(), MatrixError> {
+        let rotate = Matrix::rotate_about_arbitrary_axis(axis, rotation);
+        self.camera_position = Vector::from_slice(&rotate.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        self.camera_target   = Vector::from_slice(&rotate.matmul(&self.camera_target.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        self.camera_up       = Vector::from_slice(&rotate.matmul(&self.camera_up.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        self.camera_right    = Vector::from_slice(&rotate.matmul(&self.camera_right.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
         Ok(())
     }
 
-    pub fn rotation_relative_to_the_target(&mut self, rotation:Vector<f32>) -> Result<(), MatrixError> {
-        let rotate_about_target = Matrix::rotate_around_p(self.camera_target.clone(), rotation)?;
-        self.camera_position = rotate_about_target.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
-        self.camera_target = rotate_about_target.matmul(&self.camera_target.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
-        self.camera_up = rotate_about_target.matmul(&self.camera_up.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
-        self.camera_right = rotate_about_target.matmul(&self.camera_right.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
+    /// VERIFIED (mostly)
+    /// VERIFIED (mostly)
+    /// VERIFIED (mostly)
+    /// VERIFIED (mostly)
+    /// VERIFIED (mostly)
+    pub fn rotation_relative_to_the_target_to_the(&mut self, rotation:f32, axis:CameraAxis) -> Result<(), MatrixError> {
+        let axis = match axis {
+            CameraAxis::Up => Ok(self.camera_right.clone().multiply_by_constant(-1.0)),
+            CameraAxis::Right => Ok(self.camera_up.clone()),
+            //CameraAxis::Right => Ok(self.camera_right.clone()),
+            //CameraAxis::Up => Ok(self.camera_up.clone()),
+            CameraAxis::Forward => Err(MatrixError::InvalidAxis),
+        }?;
+        // println!("initial self.camera_position = {}", self.camera_position);
+        // println!("initial self.camera_target = {}", self.camera_target);
+        // println!("initial self.camera_up = {}", self.camera_up);
+        // println!("initial self.camera_right = {}", self.camera_right);
+        // //let axis = Vector::from_1darray([0., 1., 0.]);
+        // println!("p {}, axis {}, rotation deg {}", self.camera_target.clone(), axis.clone(), rotation);
+        let rotate_about_target = Matrix::rotate_around_p_on_arbitrary_axis(self.camera_target.clone(), axis.clone(), rotation)?;
+        let plain_rotate = Matrix::rotate_about_arbitrary_axis(axis.clone(), rotation);
+
+        //fn _rotate_maybe(pos:Vector<f32>, w:f32, rot:f32) -> Vector<f32> {
+        //    let (x, y, z) = (pos[0], pos[1], pos[2]);
+        //    let c = rot.to_radians().cos();
+        //    let s = rot.to_radians().sin();
+        //    Vector::from_1darray([c*x + s*z + 10.0*s*w, y, -s*x + c*z + 10.0*c*w - 10.0*w, w])
+        //}
+         println!("original self.camera_position = {}", self.camera_position);
+         println!("original self.camera_target = {}", self.camera_target);
+         println!("original self.camera_up = {}", self.camera_up);
+         println!("original self.camera_right = {}", self.camera_right);
+         println!("");
+        self.camera_position = Vector::from_slice(&rotate_about_target.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        self.camera_target   = Vector::from_slice(&rotate_about_target.matmul(&self.camera_target.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        self.camera_up       = Vector::from_slice(&plain_rotate.matmul(&self.camera_up.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        self.camera_right    = Vector::from_slice(&plain_rotate.matmul(&self.camera_right.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+
+        // self.camera_position = Vector::from_slice(&_rotate_maybe(self.camera_position.clone(), 1.0, rotation).array[0..3]);
+        // self.camera_target   = Vector::from_slice(&_rotate_maybe(self.camera_target.clone(), 1.0, rotation).array[0..3]);
+        // //self.camera_up       = Vector::from_slice(&_rotate_maybe(self.camera_up.clone(), 1.0, rotation).array[0..3]);
+        // self.camera_right    = Vector::from_slice(&_rotate_maybe(self.camera_right.clone(), 1.0, rotation).array[0..3]);
+
+
+        // //let rotate_about_target = Matrix::rotate_around_p_on_arbitrary_axis((self.camera_position.clone()-self.camera_target.clone())?, axis.clone(), rotation)?;
+        // //let rotate_about_target = Matrix::rotate_around_p_on_arbitrary_axis(Vector::null(3), axis, rotation)?;
+        // self.camera_position = Vector::from_slice(&rotate_about_target.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        // self.camera_target   = Vector::from_slice(&rotate_about_target.matmul(&self.camera_target.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        // self.camera_up       = Vector::from_slice(&rotate_about_target.matmul(&self.camera_up.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        // self.camera_right    = Vector::from_slice(&rotate_about_target.matmul(&self.camera_right.clone().to_matrix().reshape(vec![1, 3])?.expand_along_axis(Matrix::from_2darray([[1.0]]), 1)?)?.array[0..3]);
+        
+         //println!("rotate {}", rotate_about_target);
+         println!("self.camera_position = {}", self.camera_position);
+         println!("self.camera_target = {}", self.camera_target);
+         println!("self.camera_up = {}", self.camera_up);
+         println!("self.camera_right = {}", self.camera_right);
+
+         println!("");
+         println!("");
+         println!("begin here");
+         let a = (self.camera_position.clone()-self.camera_target.clone())?.normalise()?.cross_product(&self.camera_up)?;
+        println!("a {}", a);
+        println!("b {}", self.camera_up);
+        let c = a.cross_product(&self.camera_up)?;
+        println!("c {}", c);
+        println!("r {}", self.camera_right);
+        println!("");
+         println!("");
+        //println!("");
+        //println!("");
+
+        //panic!();
+
+        
+        //self.camera_position = rotate_about_target.matmul(&self.camera_position.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
+        //self.camera_target = rotate_about_target.matmul(&self.camera_target.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
+        //self.camera_up = rotate_about_target.matmul(&self.camera_up.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
+        //self.camera_right = rotate_about_target.matmul(&self.camera_right.clone().to_matrix().reshape(vec![1, 4])?.expand_along_axis(Matrix::from_scalar(1.0), 1)?)?.to_vector()?;
         Ok(())
     }
 

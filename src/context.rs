@@ -3,13 +3,12 @@ use std::time::{Duration, Instant};
 use crate::enums::{
     BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
 };
-use crate::opengl::{self, abstractions, intermediate_opengl, raw_opengl};
+use crate::opengl::{abstractions, intermediate_opengl};
 use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
 use numeracy::matrices::Matrix;
 
 use glfw;
 use glfw::{Action, Key};
-use numeracy::vectors::Vector;
 use crate::enums::ContextError;
 use crate::{camera::Camera};
 use crate::lighting::Lighting;
@@ -51,7 +50,7 @@ impl Context {
     }
 
     pub fn begin_render_actions(&self) -> Result<(), ContextError> {
-        self.window.clear_to_colour(self.camera.background_colour, 1.0)?;
+        self.window.clear_to_colour(self.window.background_colour, 1.0)?;
         self.window.clear(vec![BufferBit::ColourBufferBit, BufferBit::DepthBufferBit]);
         Ok(())
 
@@ -118,7 +117,7 @@ impl Context {
     }
 
     pub fn compile_custom_program(&mut self, vertex_text:&str, fragment_text:&str) -> Result<u32, GlError> {
-        opengl::abstractions::Programs::compile_program_from_text(&self.window.opengl, vertex_text, fragment_text)
+        abstractions::Programs::compile_program_from_text(&self.window.opengl, vertex_text, fragment_text)
     }
 
     pub fn use_custom_program(&mut self, shader_id:u32) -> Result<(), GlError> {
@@ -250,13 +249,15 @@ impl Context {
 
                     if self.camera.panning {
                         let sensitivity = self.camera.pan_sensitivity * self.camera.zoom;
-                        self.camera.pan_xyz += Vector::from_1darray([dx, -1.0*dy, 0.0])
-                                                        .multiply_by_constant(sensitivity);
+                        self.camera.translation_by_internal_axes(0.0, -dx*sensitivity, dy*sensitivity)?;
+                        //self.camera.pan_xyz += Vector::from_1darray([dx, -1.0*dy, 0.0])
+                        //                                .multiply_by_constant(sensitivity);
                     }
                     if self.camera.angling {
                         let sensitivity = self.camera.angle_sensitivity * self.camera.zoom;
-                        self.camera.angle_xyz += Vector::from_1darray([dy, dx, 0.0])
-                                                        .multiply_by_constant(sensitivity);
+                        self.camera.translate_relative_to_the_target(0.0, -dx*sensitivity, dy*sensitivity)?;
+                        //self.camera.angle_xyz += Vector::from_1darray([dy, dx, 0.0])
+                        //                                .multiply_by_constant(sensitivity);
                     }
 
                     self.window.last_cursor_pos = [xpos as f32, ypos as f32];
@@ -274,7 +275,7 @@ impl Context {
                         //true => Err(ContextError::GLFWResizeBoundsError((width, height))),
                         false => {
                             self.window.aspect_ratio = width as f32/height as f32;
-                            Ok(opengl::intermediate_opengl::viewport(&self.window.opengl, width, height))
+                            Ok(intermediate_opengl::viewport(&self.window.opengl, width, height))
                         },
                     }
                 },

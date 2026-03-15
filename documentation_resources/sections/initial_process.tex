@@ -1,0 +1,65 @@
+To create an initial mechanism for producing the desired translation vector, the following process is observed:
+\begin{enumerate}
+    \item The specified axis is matched with the corresponding vector camera axis
+    \begin{enumerate}
+        \item important note: as movement along the forwards axis is governed by a more simple process, passing an axis of \fbox{CameraAxis::Forwards} will return an error, to prevent incorrect usage.
+    \end{enumerate}
+    \item Let the unit vector representing the camera axis be $\vec{a}$
+    \item Define the current camera position and camera target as $\vec{P}$ and $\vec{T}$, respectively
+    \item The vector describing the direction that is going from the target towards the camera is:
+    \begin{equation}
+        \vec{V} = \vec{P} - \vec{T}
+    \end{equation}
+    \begin{enumerate}
+        \item By considering a circle whose centre is the target, and wherein the camera position lies along its circumference, it can be found that the radius of this circle is the distance between the camera and it's target:
+        \begin{equation}
+            r = ||V|| = ||\vec{P} - \vec{T}||
+        \end{equation}
+        \item It is also to be noted that this radius will remain constant after the transformation, as the camera will be moved around the target in a circle with radius $r$
+    \end{enumerate}
+    \item Define the scalar distance that the camera will be translated to be $\Delta$
+    \begin{enumerate}
+        \item The vector describing the change in position along the axis $\vec{a}$ by an amount $\Delta$ is:
+        \begin{equation}
+            \vec{\Delta} = \Delta\vec{a}
+        \end{equation}
+    \end{enumerate}
+    \item By adding the change $\vec{\Delta}$ to the current camera direction $\vec{V}$, we get the direction altered by the distance $\Delta$ along the axis $\vec{a}$, where:
+    \begin{equation}
+        \vec{V^\prime_i} = \vec{V} + \vec{\Delta} = \vec{P} - \vec{T} + \vec{\Delta}
+    \end{equation}
+    \begin{enumerate}
+        \item Note that the distance $||\vec{V^\prime_i}|| \neq ||\vec{V}||$. As such the distance between the new position and the target no longer equals $r$, meaning that the camera is no longer along the desired circle of radius $r$.
+    \end{enumerate}
+    \item By normalising the new camera vector, the new direction of the camera vector $\vec{V^\prime_{i_n}}$ is obtained, where
+    \begin{equation}
+        \vec{V^\prime_{i_n}} = \frac{1}{||\vec{V^\prime_i}||}\vec{V^\prime_i}
+    \end{equation}
+    \begin{enumerate}
+        \item To place the camera vector onto the initially desired radius, all that is required is to multiply it by said radius. As such:
+        \begin{equation}
+            \vec{V^\prime_{i_r}} = r\vec{V^\prime_{i_n}}
+        \end{equation}
+    \end{enumerate}
+    \item Finally, to obtain the vector representing the new position of the camera in space, the target vector $\vec{T}$ is taken and added to the new direction vector, to obtain the final position after the transformation, so that the final position $\vec{P^\prime}$ is
+    \begin{equation}
+        \vec{P^\prime} = \vec{T} + \vec{V^\prime_{i_r}}
+    \end{equation}
+\end{enumerate}
+
+To further progress on the initial process, and render it more useful and intuitive, it is first beneficial to render final formula down to its base terms.
+\begin{align}
+    {\vec{P^\prime}} &= \vec{T} + \vec{V^\prime_{i_r}}\nonumber\\
+    &= \vec{T} + r\vec{V^\prime_{i_n}}\nonumber\\
+    &= \vec{T} + ||\vec{P} - \vec{T}||\frac{1}{||\vec{V^\prime_i}||}\vec{V^\prime_i}\nonumber\\
+    &= \vec{T} + \frac{||\vec{P} - \vec{T}||}{||\vec{V} + \vec{\Delta}||}(\vec{V} + \vec{\Delta})\nonumber\\
+    &= \vec{T} + \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T} + \Delta\vec{a}||}(\vec{P} - \vec{T} + \Delta\vec{a})
+\end{align}
+
+Now, given that the initial camera position $\vec{P}$ becomes the new position $\vec{P^\prime}$, there must exist some vector $\vec{X}$ such that $\vec{P} + \vec{X} = \vec{P^\prime}$. Otherwise stated:
+\begin{align}
+    \vec{X} &= \vec{P^\prime} - \vec{P}\nonumber\\
+    &= \vec{T} + \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T} + \Delta\vec{a}||}(\vec{P} - \vec{T} + \Delta\vec{a}) - \vec{P}\nonumber\\
+    &= \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T} + \Delta\vec{a}||}(\vec{P} - \vec{T} + \Delta\vec{a}) - (\vec{P} - \vec{T})\nonumber\\
+    &= \frac{||\vec{V}||}{||\vec{V} + \Delta\vec{a}||}(\vec{V} + \Delta\vec{a}) - \vec{V}
+\end{align}

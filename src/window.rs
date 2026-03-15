@@ -10,18 +10,19 @@ use glfw::fail_on_errors;
 use crate::enums::ContextError;
 
 pub struct Window {
-    pub glfw:Glfw,
-    pub window:PWindow,
-    pub events:GlfwReceiver<(f64, WindowEvent)>,
-    pub opengl:Gl,
+    pub glfw : Glfw,
+    pub window : PWindow,
+    pub events : GlfwReceiver<(f64, WindowEvent)>,
+    pub opengl : Gl,
     pub last_cursor_pos : [f32; 2],
-    pub aspect_ratio:f32,
+    pub aspect_ratio : f32,
+    pub background_colour : (f32, f32, f32),
 }
 
 impl Window {
     pub fn new_opengl() -> Result<Window, ContextError> {
         let (width, height) = (450, 450);
-        let (width, height) = (1920, 1080);
+        //let (width, height) = (1920, 1080);
         let window_name = "hello, window!";
 
         match glfw::init(fail_on_errors!()) {
@@ -35,7 +36,17 @@ impl Window {
                         let opengl = opengl::intermediate_opengl::load_opengl_with(
                                                                             get_glfw_loadfn(&mut window)
                                                                         );
-                        Ok(Window { glfw, window, events, opengl, last_cursor_pos:[0.0, 0.0], aspect_ratio:width as f32 / height as f32 })
+                        Ok(
+                            Window {
+                                glfw,
+                                window,
+                                events,
+                                opengl,
+                                last_cursor_pos:[0.0, 0.0],
+                                aspect_ratio:width as f32 / height as f32, 
+                                background_colour:(0.5, 0.5, 0.5),
+                            }
+                        )
                     },
                     None => Err(ContextError::GLFWNoWindowCreated),
                 }

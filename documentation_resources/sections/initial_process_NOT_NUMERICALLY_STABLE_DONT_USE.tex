@@ -1,0 +1,107 @@
+To create an initial mechanism for producing the desired translation vector, the following process is observed:
+\begin{enumerate}
+    \item The specified axis is matched with the corresponding vector camera axis
+    \begin{enumerate}
+        \item important note: as movement along the forwards axis is governed by a more simple process, passing an axis of \fbox{CameraAxis::Forwards} will return an error, to prevent incorrect usage.
+        \item Let the vector representing the camera axis be $\vec{a}$
+    \end{enumerate}
+    \item The camera axis $\vec{a}$ is normalised, such that:
+    \begin{equation}
+        \vec{a_n} = \frac{1}{||\vec{a}||}\vec{a}
+    \end{equation}
+    \item Define the current camera position and camera target as $\vec{P}$ and $\vec{T}$, respectively
+    \item The vector describing the direction that is going from the target towards the camera is:
+    \begin{equation}
+        \vec{V} = \vec{P} - \vec{T}
+    \end{equation}
+    \begin{enumerate}
+        \item By considering a circle whose centre is the target, and wherein the camera position lies along its circumference, it can be found that the radius of this circle is the distance between the camera and it's target:
+        \begin{equation}
+            r = ||V|| = ||\vec{P} - \vec{T}||
+        \end{equation}
+        \item It is also to be noted that this radius will remain constant after the transformation, as the camera will be moved around the target in a circle with radius $r$
+    \end{enumerate}
+    \item Define the scalar distance that the camera will be translated to be $\Delta$
+    \begin{enumerate}
+        \item The vector describing the change in position along the axis $\vec{a_n}$ by an amount $\Delta$ is:
+        \begin{equation}
+            \vec{\Delta} = \Delta\vec{a_n}
+        \end{equation}
+    \end{enumerate}
+    \item By adding the change $\vec{\Delta}$ to the current camera direction $\vec{V}$, we get the direction altered by the distance $\Delta$ along the axis $\vec{a_n}$, where:
+    \begin{equation}
+        \vec{V^\prime_i} = \vec{V} + \vec{\Delta} = \vec{P} - \vec{T} + \vec{\Delta}
+    \end{equation}
+    \begin{enumerate}
+        \item Note that the distance $||\vec{V^\prime_i}|| \neq ||\vec{V}||$. As such the distance between the new position and the target no longer equals $r$, meaning that the camera is no longer along the desired circle of radius $r$.
+    \end{enumerate}
+    \item By normalising the new camera vector, the new direction of the camera vector $\vec{V^\prime_{i_n}}$ is obtained, where
+    \begin{equation}
+        \vec{V^\prime_{i_n}} = \frac{1}{||\vec{V^\prime_i}||}\vec{V^\prime_i}
+    \end{equation}
+    \begin{enumerate}
+        \item To place the camera vector onto the initially desired radius, all that is required is to multiply it by said radius. As such:
+        \begin{equation}
+            \vec{V^\prime_{i_r}} = r\vec{V^\prime_{i_n}}
+        \end{equation}
+    \end{enumerate}
+    \item Finally, to obtain the vector representing the new position of the camera in space, the target vector $\vec{T}$ is taken and added to the new direction vector, to obtain the final position after the transformation, so that the final position $\vec{P^\prime}$ is
+    \begin{equation}
+        \vec{P^\prime} = \vec{T} + \vec{V^\prime_{i_r}}
+    \end{equation}
+\end{enumerate}
+
+To further progress on the initial process, and render it more useful and intuitive, it is first beneficial to render final formula down to its base terms.
+\begin{align}
+    {\vec{P^\prime}} &= \vec{T} + \vec{V^\prime_{i_r}}\nonumber\\
+    &= \vec{T} + r\vec{V^\prime_{i_n}}\nonumber\\
+    &= \vec{T} + ||\vec{P} - \vec{T}||\frac{1}{||\vec{V^\prime_i}||}\vec{V^\prime_i}\nonumber\\
+    &= \vec{T} + \frac{||\vec{P} - \vec{T}||}{||\vec{V} + \vec{\Delta}||}(\vec{V} + \vec{\Delta})\nonumber\\
+    &= \vec{T} + \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T} + \Delta\vec{a_n}||}(\vec{P} - \vec{T} + \Delta\vec{a_n})
+    %&= \vec{T} + \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T} + \Delta\frac{1}{||\vec{a}||}\vec{a}||}(\vec{P} - \vec{T} + \Delta\frac{1}{||\vec{a}||}\vec{a})
+\end{align}
+
+Additionally, it is important to note the following mathematical identities:
+\begin{align*}
+    ||\vec{a} \pm \vec{b}||^2 &= ||\vec{a}||^2 + ||\vec{b}||^2 \pm 2\vec{a}\cdot\vec{b}\\
+    ||\vec{a} \pm \vec{b}|| &= \sqrt{||\vec{a}||^2 + ||\vec{b}||^2 \pm 2\vec{a}\cdot\vec{b}}\\
+    ||\vec{a}|| &= ||-\vec{a}||\\
+    ||k\vec{a}||^2 &= k^2||\vec{a}||^2
+\end{align*}
+
+Next, given three vectors, $\vec{u}$, $\vec{v}$, and $\vec{w}$, where $(\vec{u}-\vec{v})\cdot\vec{w} = 0$, and $||\vec{w}|| = 1$, the following statements hold to be true:
+\begin{align}
+    ||\vec{u} - \vec{v}|| &= \sqrt{||\vec{u}||^2 + ||\vec{v}||^2 - 2\vec{u}\cdot\vec{v}}\\
+    ||\vec{u} - \vec{v} + a\vec{w}|| &= \sqrt{||\vec{u}||^2 + ||a\vec{w} - \vec{v}||^2 + 2\vec{u}\cdot(a\vec{w} - \vec{v})}\nonumber\\
+    &= \sqrt{||\vec{u}||^2 + ||\vec{-v}||^2 + ||a\vec{w}||^2 + 2\vec{u}\cdot(a\vec{w}-\vec{v}) - 2a\vec{w}\cdot\vec{v}}\nonumber\\
+    &= \sqrt{||\vec{u}||^2 + ||\vec{v}||^2 + a^2 + 2a\vec{w}\cdot\vec{u}-2\vec{u}\cdot\vec{v} - 2a\vec{w}\cdot\vec{v}}\nonumber\\
+    &= \sqrt{||\vec{u}||^2 + ||\vec{v}||^2 - 2\vec{u}\cdot\vec{v} + a^2 + \cancelto{0}{2a\vec{w}\cdot(\vec{u}-\vec{v})}}\nonumber\\
+    &= \sqrt{||\vec{u} - \vec{v}||^2 + a^2} \label{uvaw}
+\end{align}
+
+
+Now, given that the initial camera position $\vec{P}$ becomes the new position $\vec{P^\prime}$, there must exist some vector $\vec{X}$ such that $\vec{P} + \vec{X} = \vec{P^\prime}$. Otherwise stated:
+\begin{align}
+    \vec{X} &= \vec{P^\prime} - \vec{P}\nonumber\\
+    &= \vec{T} + \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T} + \Delta\vec{a_n}||}(\vec{P} - \vec{T} + \Delta\vec{a_n}) - \vec{P}\nonumber\\
+    &= \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T} + \Delta\vec{a_n}||}(\vec{P} - \vec{T} + \Delta\vec{a_n}) - (\vec{P} - \vec{T}) \label{full_pre_simplification_X}
+\end{align}
+
+As the vectors $\vec{P}$, $\vec{T}$, and $\vec{a_n}$ satisfy the conditions that make equation \ref{uvaw} valid, it can be directly applied as a simplification to equation \ref{full_pre_simplification_X}, such that:
+\begin{align}
+    \vec{X} &= \frac{||\vec{P} - \vec{T}||}{
+        \sqrt{||\vec{P} - \vec{T}||^2 + \Delta^2}
+    }(\vec{P} - \vec{T} + \Delta\vec{a_n}) - (\vec{P} - \vec{T})\nonumber\\
+    &= F_r(\vec{P} - \vec{T} + \Delta\vec{a_n}) - (\vec{P} - \vec{T})\nonumber\\
+    &= F_r\vec{P} - \vec{P} - F_r\vec{T} + \vec{T} + F_r\Delta\vec{a_n}\nonumber\\
+    &= \vec{P}(F_r-1) - \vec{T}(F_r-1) + F_r\Delta\vec{a_n}\nonumber\\
+    &= (\vec{P}-\vec{T})(F_r-1) + F_r\Delta\vec{a_n}
+\end{align}
+where:
+\begin{align}
+    F_r = \frac{||\vec{P} - \vec{T}||}{\sqrt{||\vec{P} - \vec{T}||^2 + \Delta^2}}\\
+    F_r = \frac{||\vec{P} - \vec{T}||}{||\vec{P} - \vec{T}||\sqrt{
+        1 + (\frac{\Delta}{||\vec{P} - \vec{T}||})^2}}\\
+    F_r = \frac{1}{\sqrt{
+        1 + (\frac{\Delta}{||\vec{P} - \vec{T}||})^2}}
+\end{align}

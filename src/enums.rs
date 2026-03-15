@@ -295,3 +295,10 @@ pub enum CameraAxis {
     Right,
     Up,
 }
+
+pub enum CameraVector {
+    Position,
+    Target,
+    Right,
+    Up
+}

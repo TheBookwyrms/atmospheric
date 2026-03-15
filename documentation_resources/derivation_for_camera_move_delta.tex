@@ -1,0 +1,61 @@
+% !TeX root = main.tex
+
+\documentclass{article}
+\usepackage{multicol}
+\usepackage{titlesec}
+
+%\usepackage{graphicx}
+%\usepackage{float}
+\usepackage{geometry}
+
+\usepackage{amsmath, amssymb}
+\usepackage{cancel}
+%\usepackage{siunitx}
+
+%\usepackage{subcaption}
+%\usepackage{array}
+%\usepackage[font=small,labelfont=bf]{caption}
+
+%\usepackage{tcolorbox}
+
+\renewcommand{\labelenumii}{\arabic{enumi}.\arabic{enumii}}
+\renewcommand{\labelenumiii}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}}
+\renewcommand{\labelenumiv}{\arabic{enumi}.\arabic{enumii}.\arabic{enumiii}.\arabic{enumiv}}
+
+\geometry{
+ a4paper,
+ % a4 is 210mm by 297 mm
+ total={170mm,237mm},
+ left=20mm, % thus 20 mm right
+ top=30mm, % thus 30 mm bottom
+}
+
+
+\begin{document}
+
+\title{Derivation for move\_position\_by\_delta\_on\_axis in src/camera.rs}
+\date{}
+\maketitle
+
+
+\input{sections/abstract}
+
+\raggedcolumns % fixes space after section titles
+
+\begin{multicols*}{2}
+
+    \raggedbottom
+
+    \section{Function Definitions}
+    \input{sections/function_definitions.tex}
+
+    \section{Initial Process}
+    \input{sections/initial_process.tex}
+
+\end{multicols*}
+
+\flushbottom
+
+
+
+\end{document}

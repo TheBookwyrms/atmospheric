@@ -1,0 +1,21 @@
+The function in question is:\newline
+%\begin{verbatim}
+%\begin{tcolorbox}[colback=lightgray,colframe=black,sharp corners]
+%move\_position\_by\_delta\_on\_axis(\newline $\-\-\-$\&self, axis:CameraAxis, delta:f32\newline) -$>$ Result$<$Vector$<$f32$>$, MatrixError$>$
+%\end{tcolorbox}
+\noindent\fbox{\parbox{\columnwidth}{move\_position\_by\_delta\_on\_axis(\newline $\-\-\-\>\>\-\-\-\>\>$   \&self, axis:CameraAxis, delta:f32\newline) -$>$ Result$<$Vector$<$f32$>$, MatrixError$>$}}\newline
+%\end{verbatim}
+
+
+The function takes inputs of:
+\begin{enumerate}
+    \item \fbox{\&self}, of type Self, which is type CameraInfoMatrix
+    \item \fbox{axis:CameraAxis}, which has enum variants of Forward, Right, and Up
+    \item \fbox{delta:f32}, which is the distance delta to move along the specified axis
+\end{enumerate}
+$\-$\newline
+The function produces an output of either:
+\begin{enumerate}
+    \item \fbox{Ok(Vector$<$f32$>$)}, which is the vector that gets added to the current position to translate it to the new position
+    \item \fbox{Err(MatrixError)}, signalling that a math error occured
+\end{enumerate}

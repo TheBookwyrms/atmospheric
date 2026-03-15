@@ -13,9 +13,9 @@ TO DO
 - [ ] gui stuff
 - [ ] convolution kernel postprocessing
 - [x] fix camera viewing position at correct point, without seeing behind camera
-    - [ ] harmonize all camera and matrix code together
-    - [ ] neaten camera viewing code
-    - [ ] add camera enums for ease of use
+    - [x] harmonize all camera and matrix code together
+    - [x] neaten camera viewing code
+    - [x] add camera enums for ease of use
 - [ ] text rendering
 - [ ] add Module system to allow for pre-packaged settings such as Shaders, Camera pre-sets, and others
 

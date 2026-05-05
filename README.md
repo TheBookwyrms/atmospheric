@@ -18,18 +18,5 @@ TO DO
     - [x] add camera enums for ease of use
 - [ ] text rendering
 - [ ] add Module system to allow for pre-packaged settings such as Shaders, Camera pre-sets, and others
-
-
-project ideas
-- [ ] recreate all old opengl testing projects in rust
-- [ ] n-body planet simulation
-    - [ ] with gravity in shaders
-    - [ ] barnes-hut gravity simulation
-- [ ] wave simulator
-- [ ] matrix structure analysis (statics/frames + trusses/loadings)
-    - internal forces and stresses
-    - shear force
-    - bending moment
-    - visualise it in 3D
-- [ ] doppler effect simulator and other cool stuff (trains?)
-- [ ] cool stuff with parametric curves
+- [ ] test out whether multiple shader programs can be used sequentially without overriding each other
+    - [ ] can i use multiple shader calls, at multiple positions, and see all of the results simultaneously, without conflicts

@@ -7,8 +7,8 @@ layout (location = 3) in vec3 point_n;
 
 out vec3 point_colour;
 out float point_opacity;
-//out vec3 norm;
-//out vec3 fragment_position;
+out vec3 norm;
+out vec3 fragment_position;
 
 
 uniform mat4 orthographic_projection;
@@ -17,8 +17,10 @@ uniform mat4 world_transform;
 
 void main() {
     gl_Position = orthographic_projection * camera_transformation * world_transform * vec4(point_pos, 1.0);
-    //fragment_position = vec3(world_transform * vec4(point_pos, 1.0));
+    fragment_position = vec3(world_transform * vec4(point_pos, 1.0));
     point_colour = point_col;
     point_opacity = point_o;
-    //norm = normalize(vec3(world_transform * vec4(point_n, 1.0)));
+    //vec3 norm = mat3(transpose(inverse(world_transform))) * point_n;
+    //norm = point_n;
+    norm = normalize(vec3(world_transform * vec4(point_n, 1.0)));
 }

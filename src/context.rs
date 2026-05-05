@@ -15,27 +15,28 @@ use crate::lighting::Lighting;
 use crate::window::Window;
 
 
-pub struct Context {
+pub struct Context<'a> {
     pub window:Window,
     pub camera:Camera,
     pub lighting:Lighting,
     pub programs:Programs,
-    pub textures:Textures,
+    pub textures:Textures<'a>,
     pub paused:bool,
     pub pause_time:Instant,
     pub current_time:Instant,
 }
-impl Context {
+impl<'a> Context<'a> {
     pub fn default() -> Result<Self, ContextError> {
         let window = Window::new_opengl()?;
         let camera = Camera::new(CameraMode::PointOfView);
-        //let camera = Camera::new(CameraMode::Encompassing);
+        let camera = Camera::new(CameraMode::Encompassing);
         let lighting = Lighting::new();
 
         let programs = Programs::compile(&window.opengl)?;
+        let textures = Textures::new_empty();
 
         Ok(Self {
-            window, camera, lighting, programs:programs, textures:Textures::new_empty(),
+            window, camera, lighting, programs, textures,
             paused:false, pause_time:Instant::now(), current_time:Instant::now(),
          })
     }
@@ -92,7 +93,7 @@ impl Context {
 
         with_vao.set_vertex_attribs(vertices.dtype_memsize() as i32)?;
 
-        Ok((with_vao.vao, with_vbo.vbo, with_ebo.ebo))
+        Ok((with_vao.get_vao(), with_vbo.get_vbo(), with_ebo.get_ebo()))
     }
 
 
@@ -104,13 +105,9 @@ impl Context {
 
         with_vao.set_vertex_attribs(data.dtype_memsize() as i32)?;
 
-        Ok((with_vao.vao, with_vbo.vbo))
+        Ok((with_vao.get_vao(), with_vbo.get_vbo()))
     }
 
-
-    //pub fn draw<T:Clone>(&self, call:DrawCall, mode:DrawMode, vao:u32, data:&Matrix<T>, format:DataFormat) -> Result<(), RenderError> {
-    //    Ok(self.programs.draw(&self.window.opengl, call, mode, vao, data, format)?)
-    //}
 
     pub fn set_custom_uniform<T:Clone>(&self, program_id:u32, uniform:Uniform, value:Matrix<T>) -> Result<(), GlError> {
         intermediate_opengl::set_uniform(&self.window.opengl, program_id, uniform.name, uniform.uniform_type, value.as_ptr())
@@ -171,24 +168,26 @@ impl Context {
             Matrix::from_scalar(self.lighting.ambient_strength))?;
         self.programs.set_uniform(&self.window.opengl,"ambient_colour", UniformType::Vec3, 
             Matrix::from_1darray(self.lighting.ambient_colour.into()))?;
+
+            
+        self.programs.set_uniform(&self.window.opengl,"light_source_pos", UniformType::Vec3,
+            Matrix::from_1darray(self.lighting.light_source_pos.into()))?;
+        self.programs.set_uniform(&self.window.opengl,"light_source_colour", UniformType::Vec3,
+            Matrix::from_1darray(self.lighting.light_source_colour.into()))?;
+
+            
+        self.programs.set_uniform(&self.window.opengl,"camera_viewpos", UniformType::Vec3,
+            Matrix::from_vector(self.camera.camera_info_matrix.get_camera(crate::enums::CameraVector::Position)))?;
+        self.programs.set_uniform(&self.window.opengl,"specular_strength", UniformType::Float,
+            Matrix::from_scalar(self.lighting.specular_strength))?;
+        self.programs.set_uniform(&self.window.opengl,"specular_power", UniformType::Float,
+            Matrix::from_scalar(self.lighting.specular_power as f32))?;
         Ok(())
 
         //self.programs.set_uniform(&self.window.opengl,"diffuse_strength", UniformType::Float,
         //    Matrix::from_float(self.lighting.diffuse_strength));
         //self.programs.set_uniform(&self.window.opengl,"diffuse_base", UniformType::Float,
         //    Matrix::from_float(self.lighting.diffuse_base));
-        //self.programs.set_uniform(&self.window.opengl,"light_source_pos", UniformType::Vec3,
-        //    Matrix::from_1darray(self.lighting.light_source_pos.into()));
-        //self.programs.set_uniform(&self.window.opengl,"light_source_colour", UniformType::Vec3,
-        //    Matrix::from_1darray(self.lighting.light_source_colour.into()));
-        //self.programs.set_uniform(&self.window.opengl,"specular_strength", UniformType::Float,
-        //    Matrix::from_float(self.lighting.specular_strength));
-        //self.programs.set_uniform(&self.window.opengl,"specular_power", UniformType::Float,
-        //    Matrix::from_float(self.lighting.specular_power as f32));
-        //let view_vec = self.lighting.view_vec;
-        //let view_vec3 = (view_vec.0, view_vec.1, view_vec.2);
-        //self.programs.set_uniform(&self.window.opengl,"camera_viewpos", UniformType::Vec3,
-        //    Matrix::from_1darray(view_vec3.into()));
         //self.programs.set_uniform(&self.window.opengl,"light_y_transform", UniformType::Mat4,
         //    self.lighting.light_y_transform.clone());
     }

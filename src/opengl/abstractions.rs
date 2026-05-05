@@ -99,14 +99,19 @@ fn index_to_opengl_texture(index:usize) -> Result<OpenglTexture, GlError> {
 #[derive(Debug)]
 pub struct WithObject<'l> {
     opengl:&'l Gl,
-    pub texture_type:Option<TextureTarget>,
-    pub data_format:Option<DataFormat>,
-    pub vao:u32,
-    pub vbo:u32,
-    pub ebo:u32,
-    pub tex:u32,
+    texture_type:Option<TextureTarget>,
+    data_format:DataFormat,
+    vao:u32,
+    vbo:u32,
+    ebo:u32,
+    tex:u32,
 }
 impl WithObject<'_> {
+    pub fn get_vao(&self) -> u32 { self.vao }
+    pub fn get_vbo(&self) -> u32 { self.vbo }
+    pub fn get_ebo(&self) -> u32 { self.ebo }
+    pub fn get_tex(&self) -> u32 { self.tex }
+
     pub fn add(mut self, object:Object, id:u32) -> Result<Self, GlError> {
         match object {
             Object::VBO => {
@@ -150,22 +155,22 @@ impl WithObject<'_> {
         match object {
             Object::VBO => {
                 intermediate_opengl::bind_buffer(opengl, BufferObject::VertexBufferObject, id);
-                WithObject { opengl, texture_type:None, data_format:Some(format),
+                WithObject { opengl, texture_type:None, data_format:format,
                              vao:0, vbo:id, ebo:0, tex:0 }
             },
             Object::VAO => {
                 intermediate_opengl::bind_vertex_array(opengl, ArrayObject::VertexArrayObject, id);
-                WithObject { opengl, texture_type:None, data_format:Some(format),
+                WithObject { opengl, texture_type:None, data_format:format,
                              vao:id, vbo:0, ebo:0, tex:0 }
             },
             Object::EBO => {
                 intermediate_opengl::bind_buffer(opengl, BufferObject::ElementBufferObject, id);
-                WithObject { opengl, texture_type:None, data_format:Some(format),
+                WithObject { opengl, texture_type:None, data_format:format,
                              vao:0, vbo:0, ebo:id, tex:0 }
             },
             Object::Texture2D => {
                 intermediate_opengl::bind_texture(opengl, TextureTarget::Texture2D, id);
-                WithObject { opengl, texture_type:None, data_format:Some(format),
+                WithObject { opengl, texture_type:None, data_format:format,
                              vao:0, vbo:0, ebo:0, tex:id }
             }
         }
@@ -228,7 +233,7 @@ impl WithObject<'_> {
 
     pub fn set_vertex_attribs(&self, dtype_size:i32) -> Result<(), GlError> {
         if self.vao == 0 { Err(GlError::ObjectNotBound)? }
-        match self.data_format.ok_or(GlError::InvalidDataFormat)? {
+        match self.data_format {
             DataFormat::Position3Colour3Alpha1 => {
                 intermediate_opengl::set_vertex_attrib_position_3(self.opengl, 0, 7, 0, dtype_size);
                 intermediate_opengl::set_vertex_attrib_colour_3(  self.opengl, 1, 7, 3, dtype_size);
@@ -242,7 +247,7 @@ impl WithObject<'_> {
             },
             DataFormat::Position3Texture2 => {
                 intermediate_opengl::set_vertex_attrib_position_3(self.opengl, 0, 5, 0, dtype_size);
-                intermediate_opengl::set_vertex_attrib_colour_3(  self.opengl, 1, 5, 3, dtype_size);
+                intermediate_opengl::set_vertex_attrib_texture_2( self.opengl, 1, 5, 3, dtype_size);
             },
         }
         Ok(())
@@ -251,13 +256,11 @@ impl WithObject<'_> {
     pub fn draw<T:Clone>(&self, call:DrawCall, mode:DrawMode, data:&Matrix<T>) -> Result<(), GlError> {
         if data.ndims() != 2 { Err(GlError::InvalidDataDims(data.ndims()))? }
 
-        let format = self.data_format.ok_or(GlError::InvalidDataFormat)?;
-
         match call {
             DrawCall::Vertices => {
                 if self.vbo != 0 && self.vao == 0 && self.ebo == 0 { Err(GlError::InvalidObjectType)? }
                 //if self.object_type != Object::VBO { Err(GlError::InvalidObjectType)? }
-                let is_ok_format = match format {
+                let is_ok_format = match self.data_format {
                     DataFormat::Position3Colour3Alpha1 => true,
                     DataFormat::Position3Colour3Alpha1Normal3 => true,
                     DataFormat::Position3Texture2 => false,
@@ -419,7 +422,7 @@ impl Programs {
         mode:DrawMode, data:&Matrix<T>,
     ) -> Result<(), GlError> {
 
-        let format = objects.data_format.ok_or(GlError::InvalidDataFormat)?;
+        let format = objects.data_format;
 
         match self.current_program_type {
             None => Err(GlError::InvalidProgramType),
@@ -458,10 +461,10 @@ pub struct Uniform<'a> {
 
 
 
-pub struct Textures {
-    textures  : [Option<PreparedTexture>; 32]
+pub struct Textures<'a> {
+    textures  : [Option<&'a PreparedTexture>; 32]
 }
-impl Textures {
+impl<'a> Textures<'a> {
     pub fn new_empty() -> Self {
         Textures {
             textures:[
@@ -473,7 +476,7 @@ impl Textures {
         }
     }
 
-    pub fn activate(&mut self, opengl:&Gl, tex:OpenglTexture, prepared:&PreparedTexture, programs:&Programs) -> Result<(), GlError> {
+    pub fn activate(&mut self, opengl:&Gl, tex:OpenglTexture, prepared:&'a PreparedTexture, programs:&Programs) -> Result<(), GlError> {
         
         let tex_index = opengl_texture_to_index(tex);
         let current_program = match programs.current_program {
@@ -490,7 +493,7 @@ impl Textures {
                     opengl, current_program, &uniform,
                     UniformType::Int, Matrix::from_scalar(tex_index).as_ptr()
                 )?;
-                self.textures[tex_index] = Some(prepared.clone());
+                self.textures[tex_index] = Some(prepared);
                 Ok(())
             },
             Some(_) => Err(GlError::AlreadyActivated(tex)),
@@ -548,14 +551,37 @@ pub struct TextureSetup<'a> {
     mipmap_created:bool,
 }
 impl<'a> TextureSetup<'a> {
-    pub fn get(opengl:&'a Gl, texture_type:TextureTarget, image:Image) -> TextureSetup<'a> {
+    pub fn get_prepared(
+        opengl:&'a Gl, texture_type:TextureTarget, image:Image,
+        s_wrapping:TextureWrapping, t_wrapping:TextureWrapping,
+        min_filter:TextureMinFilter, mag_filter:TextureMagFilter,
+        mipmap_level:i32
+    ) -> PreparedTexture {
+        let texture_id = intermediate_opengl::generate(opengl, texture_type.into());
+
+        let prepared_texture = TextureSetup {
+            opengl:opengl, texture: texture_id, texture_type,
+            width:image.width, height:image.height, pixels:image.data, image_format:image.format.into(),
+            wrapping_set:false, filters_set:false,
+            texture_image_created:false, mipmap_created:false
+        }.set_st_wrapping(s_wrapping, t_wrapping)
+         .set_filters(min_filter, mag_filter)
+         .set_texture_image_and_mipmap(mipmap_level)
+         .get_if_prepared().unwrap();
+
+        prepared_texture
+    }
+
+    pub fn get_unprepared(opengl:&'a Gl, texture_type:TextureTarget, image:Image) -> TextureSetup<'a> {
         let texture_id = intermediate_opengl::generate(opengl, texture_type.into());
 
 
-        TextureSetup { opengl:opengl, texture: texture_id, texture_type,
-                        width:image.width, height:image.height, pixels:image.data, image_format:image.format.into(),
-                        wrapping_set:false, filters_set:false,
-                        texture_image_created:false, mipmap_created:false }
+        TextureSetup {
+            opengl:opengl, texture: texture_id, texture_type,
+            width:image.width, height:image.height, pixels:image.data, image_format:image.format.into(),
+            wrapping_set:false, filters_set:false,
+            texture_image_created:false, mipmap_created:false
+        }
     }
 
     pub fn set_st_wrapping(mut self, s_wrapping:TextureWrapping, t_wrapping:TextureWrapping) -> Self {
@@ -590,17 +616,8 @@ impl<'a> TextureSetup<'a> {
         self.mipmap_created = true;
         self
     }
-    //pub fn create_mipmap(mut self) -> Self {
-    //    intermediate_opengl::bind_texture(self.opengl, self.texture_type, self.texture);
-//
-    //    intermediate_opengl::generate_mipmap(self.opengl, self.texture_type);
-//
-    //    intermediate_opengl::bind_texture(self.opengl, self.texture_type, 0);
-    //    self.mipmap_created = true;
-    //    self
-    //}
 
-    pub fn get_prepared_texture(self) -> Result<PreparedTexture, GlError> {
+    pub fn get_if_prepared(self) -> Result<PreparedTexture, GlError> {
         if !self.wrapping_set {
             Err(GlError::TextureUnprepared(UnpreparedTexture::Wrapping))
         } else if !self.filters_set {

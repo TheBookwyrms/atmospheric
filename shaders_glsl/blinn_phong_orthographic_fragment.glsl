@@ -2,8 +2,8 @@
 
 in vec3 point_colour;
 in float point_opacity;
-//in vec3 norm;
-//in vec3 fragment_position;
+in vec3 norm;
+in vec3 fragment_position;
 
 
 //uniform mat4 world_transform;
@@ -14,13 +14,13 @@ uniform vec3 ambient_colour;
 
 //uniform float diffuse_strength;
 //// uniform float diffuse_base;
-//
-//uniform vec3 light_source_pos;
-//uniform vec3 light_source_colour;
-//
-//uniform float specular_strength;
-//uniform vec3 camera_viewpos;
-//uniform float specular_power;
+
+uniform vec3 light_source_pos;
+uniform vec3 light_source_colour;
+
+uniform float specular_strength;
+uniform vec3 camera_viewpos;
+uniform float specular_power;
 //
 //uniform mat4 light_y_transform;
 
@@ -31,17 +31,19 @@ void main() {
 
     //vec3 a = gl_FragCoord.xyz;
 
-    //vec3 ambient_light = ambient_strength * ambient_colour;
+    vec3 ambient_component = ambient_strength * ambient_colour;
 
-
-    //vec3 light_dir = normalize(light_source_pos - fragment_position);
-    //
-    //float diffuse_component = max(dot(norm, light_dir), 0);
+    vec3 norm = normalize(norm);
+    vec3 light_dir = normalize(light_source_pos - fragment_position);
+    
+    float diffuse_light = max(dot(norm, light_dir), 0);
+    vec3 diffuse_component = diffuse_light * light_source_colour;
     //vec3 diffuse_light = (diffuse_component * light_source_colour * diffuse_strength);
-//
-//
+
+
     //vec3 view_direction = normalize(fragment_position - camera_viewpos);
-    ////vec3 view_direction = normalize(camera_viewpos - fragment_position);
+    vec3 view_direction = normalize(camera_viewpos - fragment_position);
+    vec3 reflect_dir = reflect(-light_dir, norm);
 //
     //vec3 light_reflect_dir = normalize(
     //        vec3(
@@ -52,13 +54,15 @@ void main() {
     ////vec3 light_reflect_dir = normalize(reflect(-light_dir, norm));
 //
     //// specular nonsense that doesn't work
+    float specular_magnitude = pow(max(dot(view_direction, reflect_dir), 0.0), specular_power);
     //float specular_magnitude = pow(max(dot(view_direction, light_reflect_dir), 0.0), specular_power);
-    //vec3 specular_light = specular_strength * specular_magnitude * light_source_colour;
+    vec3 specular_component = specular_strength * specular_magnitude * light_source_colour;
 
     //vec3 result = point_colour * (ambient_light + diffuse_light + specular_light);
     
-    vec3 ambient_light = ambient_strength * ambient_colour;
-    vec3 result = point_colour * (ambient_light); // doesn't work
+    //vec3 result = point_colour * (ambient_light); // doesn't work
+    //vec3 result = point_colour * (ambient_component + diffuse_component); // doesn't work
+    vec3 result = point_colour * (ambient_component + diffuse_component + specular_component); // doesn't work
     //vec3 result = point_colour * ambient_strength; // doesn't work
     //vec3 result = vec3(ambient_strength, ambient_strength, ambient_strength);
     //vec3 result = point_colour; // works

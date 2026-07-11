@@ -5,7 +5,9 @@ TO DO
 - [ ] write documentation
 - [ ] write examples for all levels of abstraction
 - [ ] object structs
-- [ ] fix blinn-phong lighting
+- [x] fix blinn-phong lighting
+    - [ ] figure out multi-light scenes for N lights
+    - [ ] implement the normal matrix for blinn-phong lighting (and just in general)
 - [ ] ppm viewer (as textures?)
     - [x] use PPM struct for ppm image textures
 - [ ] render to textures
@@ -18,5 +20,7 @@ TO DO
     - [x] add camera enums for ease of use
 - [ ] text rendering
 - [ ] add Module system to allow for pre-packaged settings such as Shaders, Camera pre-sets, and others
-- [ ] test out whether multiple shader programs can be used sequentially without overriding each other
-    - [ ] can i use multiple shader calls, at multiple positions, and see all of the results simultaneously, without conflicts
+- [x] test out whether multiple shader programs can be used sequentially without overriding each other
+    - [ ] can i use multiple shader calls, at multiple (concurrent or different) positions, and see all of the results simultaneously, without conflicts
+- [ ] save an image from a window as either PNG or JPEG
+- [ ] migrate things from rendering_stuff_rs to atmospheric

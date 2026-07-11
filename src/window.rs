@@ -20,10 +20,10 @@ pub struct Window {
 }
 
 impl Window {
-    pub fn new_opengl() -> Result<Window, ContextError> {
+    pub fn new_opengl(window_name:&'static str) -> Result<Window, ContextError> {
         let (width, height) = (450, 450);
-        //let (width, height) = (1920, 1080);
-        let window_name = "hello, window!";
+        let (width, height) = (1920, 1080);
+        //let window_name = "hello, window!";
 
         match glfw::init(fail_on_errors!()) {
             Ok(mut glfw) => {

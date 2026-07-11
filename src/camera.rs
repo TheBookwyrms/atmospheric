@@ -108,7 +108,7 @@ impl Camera {
         let camera_position = Vector::from_1darray([0.0, 0.0, 10.0, 1.0]);
         //let camera_position = Vector::from_1darray([0.0, 0.0, 20.0, 1.0]);
         let camera_target = Vector::from_1darray([0.0, 0.0, -10.0, 1.0]);
-        //let camera_target = Vector::from_1darray([0.0, 0.0, 0.0, 1.0]);
+        let camera_target = Vector::from_1darray([0.0, 0.0, 0.0, 1.0]);
         let camera_up = Vector::from_1darray([0.0, 1.0, 0.0, 1.0]);
         let camera_right = Vector::from_1darray([1.0, 0.0, 0.0, 1.0]);
 

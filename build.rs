@@ -67,17 +67,18 @@ fn main() -> Result<(), BuildError> {
 
         let path_buffer = path?.path();
 
-        let shader_path_str = path_buffer.clone().into_os_string().into_string()?;
-        let shader_path_str = shader_path_str.as_str();
+        let shader_path_string = path_buffer.clone().into_os_string().into_string()?;
+        let shader_path_str = shader_path_string.as_str();
 
         let split = shader_path_str.split(r#"\"#).collect::<Vec<&str>>();
         let shader_name = split[split.len()-1].split(".").collect::<Vec<&str>>()[0];
+        let shader_name_upper = shader_name.to_uppercase();
+        let shader_name_upper_str = shader_name_upper.as_str();
 
 
-        let mut let_statement = String::from("pub const ");
-        let_statement.push_str(shader_name.to_uppercase().as_str());
-        let_statement.push_str(r##" : &'static str = ""##);
-        shaders_file.write(let_statement.as_bytes())?;
+
+        let shader_let_statement = format!(r##"pub const {shader_name_upper_str} : &'static str = ""##);
+        shaders_file.write(shader_let_statement.as_bytes())?;
 
         let mut shader_text = String::new();
         File::open(shader_path_str)?.read_to_string(&mut shader_text)?;

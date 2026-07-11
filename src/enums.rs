@@ -65,6 +65,7 @@ pub enum ProgramSelect {
     SelectBlinnPhongOrthographic,
     SelectSimpleOrthographic,
     SelectSimpleTexture,
+    SelectPhongTexture,
     Custom(u32)
 }
 
@@ -143,6 +144,7 @@ pub enum DataFormat {
     Position3Texture2,
     Position3Colour3Alpha1,
     Position3Colour3Alpha1Normal3,
+    Position3Colour3Alpha1Normal3Texture2,
     //Position3Colour3Texture2,
     //Position3Colour3Alpha1Texture2,
 }

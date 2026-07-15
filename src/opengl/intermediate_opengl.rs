@@ -264,32 +264,12 @@ pub fn set_vertex_attrib_texture_2(opengl:&Gl, loc:u32, len:i32, offset:i32, dty
 }
 
 
-pub fn set_vertex_attrib(opengl:&Gl, layout_location:u32, num_items:i32, stride:i32, offset:i32, dtype_size:i32){
-//) -> Result<(), GlError>{
-    
+pub fn set_vertex_attrib(opengl:&Gl, layout_location:u32, num_items:i32, stride:i32, offset:i32, dtype_size:i32){    
     let stride = stride * dtype_size;
     let offset = (offset * dtype_size) as *const c_void;
 
-    //let n_per_vertice : i32 = 3;
-    //let n_per_colour  : i32 = 3;
-    //let n_per_opacity : i32 = 1;
-    //let n_per_normal  : i32 = 3;
-    //let len_ptr = n_per_vertice + n_per_colour +
-    //                        n_per_opacity + if store_normals
-    //                        {n_per_normal} else {0};
-    //let stride = len_ptr * dtype_size;
-    //let (num_items, offset) = match layout_location {
-    //    0 => Ok((n_per_vertice, 0 as *const c_void)),
-    //    1 => Ok(( n_per_colour , ((n_per_vertice) * dtype_size) as *const c_void)),
-    //    2 => Ok((n_per_opacity, ((n_per_vertice + n_per_colour) * dtype_size) as *const c_void)),
-    //    3 => if store_normals {
-    //            Ok((n_per_normal, ((n_per_vertice + n_per_colour + n_per_opacity) * dtype_size) as *const c_void))
-    //        } else {Err(GlError::InvalidLayoutLocation(3))},
-    //    n => Err(GlError::InvalidLayoutLocation(n)),
-    //}?;
     raw_opengl::enable_vertex_attrib_array(opengl, layout_location);
     raw_opengl::vertex_attrib_pointer(opengl, layout_location, num_items, gl::FLOAT, gl::FALSE, stride, offset);
-    //Ok(())
 }
 
 
@@ -302,7 +282,7 @@ pub fn buffer_sub_data(opengl:&Gl, target:BufferObject, size:isize, data:*const 
 
 
 pub fn draw_arrays(opengl:&Gl, mode:DrawMode, num_shapes:i32) {
-    raw_opengl::point_size(opengl, 10.0);
+    raw_opengl::point_size(opengl, 50.0);
     match mode {
         DrawMode::GlPoints =>    raw_opengl::draw_arrays(opengl, gl::POINTS, num_shapes),
         DrawMode::GlLines =>     raw_opengl::draw_arrays(opengl, gl::LINES, num_shapes),

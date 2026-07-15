@@ -282,7 +282,7 @@ pub fn buffer_sub_data(opengl:&Gl, target:BufferObject, size:isize, data:*const 
 
 
 pub fn draw_arrays(opengl:&Gl, mode:DrawMode, num_shapes:i32) {
-    raw_opengl::point_size(opengl, 50.0);
+    raw_opengl::point_size(opengl, 10.0);
     match mode {
         DrawMode::GlPoints =>    raw_opengl::draw_arrays(opengl, gl::POINTS, num_shapes),
         DrawMode::GlLines =>     raw_opengl::draw_arrays(opengl, gl::LINES, num_shapes),

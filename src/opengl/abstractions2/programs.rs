@@ -1,7 +1,8 @@
+use crate::config::RenderInitialConfig;
+use crate::lighting::LightCounter;
 use crate::opengl::gl::Gl;
 use crate::enums::{
-    DataFormat, DrawCall, DrawMode, GlError,
-    ProgramSelect, ShaderType, UniformType,
+    DataFormat, DrawCall, DrawMode, GlError, LightSourceForm, ProgramSelect, ShaderType, UniformType
 };
 use crate::opengl::intermediate_opengl;
 
@@ -36,7 +37,12 @@ impl Programs {
         Ok(program_id)
     }
 
-    pub fn compile_program_from_select(opengl:&Gl, program_type:ProgramSelect) -> Result<u32, GlError> {
+    pub fn compile_program_from_select(opengl:&Gl, program_type:ProgramSelect, max_lights:&LightCounter) -> Result<u32, GlError> {
+        
+        let dir_max   = max_lights.get_light_count(LightSourceForm::Directional);
+        let point_max = max_lights.get_light_count(LightSourceForm::Point);
+        let spot_max  = max_lights.get_light_count(LightSourceForm::Spot);
+
         match program_type {
             ProgramSelect::SelectBlinnPhongOrthographic => {
                 let vertex_text   = BLINN_PHONG_ORTHOGRAPHIC_VERTEX;
@@ -64,9 +70,12 @@ impl Programs {
             },
             ProgramSelect::SelectPhongTexture => {
                 let vertex_text   = PHONG_TEXTURE_VERTEX;
-                let fragment_text = PHONG_TEXTURE_FRAGMENT;
+                let fragment_text = PHONG_TEXTURE_FRAGMENT
+                .replace("find_and_replace_with_max_number_of_point_lights", &dir_max.to_string())
+                .replace("find_and_replace_with_max_number_of_directional_lights", &point_max.to_string())
+                .replace("find_and_replace_with_max_number_of_spot_lights", &spot_max.to_string());
                 let shader_id = Programs::compile_program_from_text(
-                    opengl, vertex_text, fragment_text
+                    opengl, vertex_text, &fragment_text
                 )?;
                 Ok(shader_id)
             },
@@ -74,11 +83,11 @@ impl Programs {
         }
     }
 
-    pub fn compile(opengl:&Gl) -> Result<Programs, GlError> {
-        let simple_orthographic_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectSimpleOrthographic)?;
-        let blinn_phone_orthographic_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectBlinnPhongOrthographic)?;
-        let simple_texture_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectSimpleTexture)?;
-        let phong_texture_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectPhongTexture)?;
+    pub fn compile(opengl:&Gl, max_lights:&LightCounter) -> Result<Programs, GlError> {
+        let simple_orthographic_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectSimpleOrthographic, max_lights)?;
+        let blinn_phone_orthographic_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectBlinnPhongOrthographic, max_lights)?;
+        let simple_texture_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectSimpleTexture, max_lights)?;
+        let phong_texture_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectPhongTexture, max_lights)?;
 
         Ok(Programs { simple_orthographic_shader, blinn_phone_orthographic_shader,
                       simple_texture_shader, phong_texture_shader,
@@ -126,7 +135,7 @@ impl Programs {
         self.current_program_type = None;
     }
 
-    pub fn set_uniform(&self, opengl:&Gl, uniform_name:&str, uniform_type:UniformType, value:Matrix<f32>
+    pub fn set_uniform<T:Clone>(&self, opengl:&Gl, uniform_name:&str, uniform_type:UniformType, value:Matrix<T>
     ) -> Result<(), GlError> {
         match self.current_program {
             Some(id) => intermediate_opengl::set_uniform(opengl, id, uniform_name, uniform_type, value.as_ptr()),

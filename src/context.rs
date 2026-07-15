@@ -1,8 +1,11 @@
 use std::time::{Duration, Instant};
 
+use crate::camera;
+use crate::config::RenderInitialConfig;
 use crate::enums::{
     BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
 };
+use crate::lighting::LightingGenerator;
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
 use crate::opengl::abstractions2::{Programs, Textures, Uniform, WithObject};
@@ -12,32 +15,34 @@ use glfw;
 use glfw::{Action, Key};
 use crate::enums::ContextError;
 use crate::{camera::Camera};
-use crate::lighting::{DirectionalLight, PointLight, SpotLight};
 use crate::window::Window;
 
 
 pub struct Context<'a> {
     pub window:Window,
     pub camera:Camera,
-    pub lighting:PointLight,
     pub programs:Programs,
     pub textures:Textures<'a>,
+    pub lighting_generator:LightingGenerator,
     pub paused:bool,
     pub pause_time:Instant,
     pub current_time:Instant,
 }
 impl<'a> Context<'a> {
-    pub fn default() -> Result<Self, ContextError> {
-        let window = Window::new_opengl("hello window")?;
-        let camera = Camera::new(CameraMode::PointOfView);
-        let camera = Camera::new(CameraMode::Encompassing);
-        let lighting = PointLight::new();
+    pub fn default(config:RenderInitialConfig) -> Result<Self, ContextError> {
+        let window = Window::new_opengl(config.window_name, config.window_width, config.window_height)?;
+        let camera = Camera::new(config.camera_mode);
+        //let camera = Camera::new(CameraMode::PointOfView);
+        //let camera = Camera::new(CameraMode::Encompassing);
 
-        let programs = Programs::compile(&window.opengl)?;
+        //panic!("add info for number of lights by passing it through config");
+        let programs = Programs::compile(&window.opengl, &config.max_lights)?;
         let textures = Textures::new_empty();
 
+        let lighting_generator = LightingGenerator::init(&config.max_lights);
+
         Ok(Self {
-            window, camera, lighting, programs, textures,
+            window, camera, programs, textures, lighting_generator,
             paused:false, pause_time:Instant::now(), current_time:Instant::now(),
          })
     }
@@ -147,12 +152,21 @@ impl<'a> Context<'a> {
         Ok(())
     }
 
+    pub fn set_world_transform_uniform(&self, transform:Matrix<f32>) -> Result<(), ContextError> {
+        
+        let model_transform = Matrix::opengl_to_right_handed().matmul(&transform)?;
+
+        self.programs.set_uniform(&self.window.opengl, "world_transform",
+            UniformType::Mat4, model_transform)?;
+        
+        Ok(())
+    }
+
     pub fn set_orthographic_camera_uniforms(&self) -> Result<(), ContextError> {
         // opengl, id, uniform_name, uniform_type, value
 
         // model
-        self.programs.set_uniform(&self.window.opengl, "world_transform", UniformType::Mat4,
-            Matrix::opengl_to_right_handed())?;
+        self.set_world_transform_uniform(Matrix::identity(4))?;
 
         // view
         self.programs.set_uniform(&self.window.opengl, "camera_transformation", UniformType::Mat4,
@@ -170,89 +184,15 @@ impl<'a> Context<'a> {
 
     fn set_blinn_phong_uniforms(&self) -> Result<(), ContextError> {
 
-        let dir_light = DirectionalLight::new();
-        let spot_light = SpotLight::new();
 
-        
-        self.programs.set_uniform(&self.window.opengl,"directional_light.direction", UniformType::Vec3,
-            Matrix::from_1darray(dir_light.light_direction.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"directional_light.ambient_colour", UniformType::Vec3,
-            Matrix::from_1darray(dir_light.light_ambient_colour.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"directional_light.diffuse_colour", UniformType::Vec3,
-            Matrix::from_1darray(dir_light.light_diffuse_colour.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"directional_light.specular_colour", UniformType::Vec3,
-            Matrix::from_1darray(dir_light.light_specular_colour.into()))?;
-
-
-        self.programs.set_uniform(&self.window.opengl,"point_light.attenuation_factor", UniformType::Float,
-            Matrix::from_scalar(self.lighting.attenuation.get_attenuation_factor()))?;
-
-
-
-
-
-        self.programs.set_uniform(&self.window.opengl,"spot_light.position", UniformType::Vec3,
-            Matrix::from_1darray(spot_light.light_position.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"spot_light.direction", UniformType::Vec3,
-            Matrix::from_1darray(spot_light.light_direction.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"spot_light.ambient_colour", UniformType::Vec3,
-            Matrix::from_1darray(spot_light.light_ambient_colour.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"spot_light.diffuse_colour", UniformType::Vec3,
-            Matrix::from_1darray(spot_light.light_diffuse_colour.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"spot_light.specular_colour", UniformType::Vec3,
-            Matrix::from_1darray(spot_light.light_specular_colour.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"spot_light.inner_cutoff_angle", UniformType::Float,
-            Matrix::from_scalar(spot_light.cos_of_inner_cutoff_angle))?;
-        self.programs.set_uniform(&self.window.opengl,"spot_light.outer_cutoff_angle", UniformType::Float,
-            Matrix::from_scalar(spot_light.cos_of_outer_cutoff_angle))?;
-        self.programs.set_uniform(&self.window.opengl,"spot_light.attenuation_factor", UniformType::Float,
-            Matrix::from_scalar(spot_light.attenuation.get_attenuation_factor()))?;
-
-
-
-
-
-
-
-
-
-
-
-        self.programs.set_uniform(&self.window.opengl,"point_light.position", UniformType::Vec3,
-            Matrix::from_1darray(self.lighting.light_source_pos.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"point_light.ambient_colour", UniformType::Vec3,
-            Matrix::from_1darray(self.lighting.light_ambient_colour.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"point_light.diffuse_colour", UniformType::Vec3,
-            Matrix::from_1darray(self.lighting.light_diffuse_colour.into()))?;
-        self.programs.set_uniform(&self.window.opengl,"point_light.specular_colour", UniformType::Vec3,
-            Matrix::from_1darray(self.lighting.light_specular_colour.into()))?;
-
-        //self.programs.set_uniform(&self.window.opengl,"ambient_strength", UniformType::Float,
-        //    Matrix::from_scalar(self.lighting.ambient_strength))?;
-        //self.programs.set_uniform(&self.window.opengl,"ambient_colour", UniformType::Vec3, 
-        //    Matrix::from_1darray(self.lighting.ambient_colour.into()))?;
-
-            
-        //self.programs.set_uniform(&self.window.opengl,"light_source_pos", UniformType::Vec3,
-        //    Matrix::from_1darray(self.lighting.light_source_pos.into()))?;
-        //self.programs.set_uniform(&self.window.opengl,"light_source_colour", UniformType::Vec3,
-        //    Matrix::from_1darray(self.lighting.light_source_colour.into()))?;
 
             
         self.programs.set_uniform(&self.window.opengl,"camera_viewpos", UniformType::Vec3,
             Matrix::from_vector(self.camera.camera_info_matrix.get_camera(crate::enums::CameraVector::Position)))?;
-        //self.programs.set_uniform(&self.window.opengl,"specular_strength", UniformType::Float,
-        //    Matrix::from_scalar(self.lighting.specular_strength))?;
-        //self.programs.set_uniform(&self.window.opengl,"specular_power", UniformType::Float,
-        //    Matrix::from_scalar(self.lighting.specular_power as f32))?;
+
+
         Ok(())
 
-        //self.programs.set_uniform(&self.window.opengl,"diffuse_strength", UniformType::Float,
-        //    Matrix::from_float(self.lighting.diffuse_strength));
-        //self.programs.set_uniform(&self.window.opengl,"diffuse_base", UniformType::Float,
-        //    Matrix::from_float(self.lighting.diffuse_base));
-        //self.programs.set_uniform(&self.window.opengl,"light_y_transform", UniformType::Mat4,
-        //    self.lighting.light_y_transform.clone());
     }
 
 

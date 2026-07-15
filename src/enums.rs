@@ -241,6 +241,9 @@ pub enum ContextError {
     TryFromIntError(TryFromIntError),
     DataLengthError(usize),
     MatrixError(MatrixError),
+    MaxDirectionalLightsGenerated,
+    MaxPointLightsGenerated,
+    MaxSpotLightsGenerated,
 }
 
 impl From<GlError> for ContextError {
@@ -286,7 +289,7 @@ impl Into<ImageFormat> for PPMType {
     }
 }
 
-
+#[derive(Clone, Copy)]
 pub enum CameraMode {
     Encompassing,
     PointOfView,
@@ -303,4 +306,18 @@ pub enum CameraVector {
     Target,
     Right,
     Up
+}
+
+#[derive(Clone, Copy)]
+pub enum LightForm {
+    Ambient,
+    Diffuse,
+    Specular,
+}
+
+#[derive(Clone, Copy)]
+pub enum LightSourceForm {
+    Directional,
+    Point,
+    Spot,
 }

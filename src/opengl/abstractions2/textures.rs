@@ -202,6 +202,21 @@ impl<'a> TextureSetup<'a> {
 
         prepared_texture
     }
+    pub fn get_prepared_default(opengl:&'a Gl, image:Image) -> PreparedTexture {
+        let texture_id = intermediate_opengl::generate(opengl, TextureTarget::Texture2D.into());
+
+        let prepared_texture = TextureSetup {
+            opengl:opengl, texture: texture_id, texture_type:TextureTarget::Texture2D,
+            width:image.width, height:image.height, pixels:image.data, image_format:image.format.into(),
+            wrapping_set:false, filters_set:false,
+            texture_image_created:false, mipmap_created:false
+        }.set_st_wrapping(TextureWrapping::Repeat, TextureWrapping::Repeat)
+         .set_filters(TextureMinFilter::LinearMipmapNearest, TextureMagFilter::Linear)
+         .set_texture_image_and_mipmap(0)
+         .get_if_prepared().unwrap();
+
+        prepared_texture
+    }
 
     pub fn get_unprepared(opengl:&'a Gl, texture_type:TextureTarget, image:Image) -> TextureSetup<'a> {
         let texture_id = intermediate_opengl::generate(opengl, texture_type.into());

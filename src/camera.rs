@@ -1,8 +1,9 @@
-use numeracy::matrices::Matrix;
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
 use numeracy::vectors::Vector;
 use numeracy::enums::MatrixError;
 
-use crate::enums::{CameraAxis, CameraMode, CameraVector};
+use crate::enums::{CameraAxis, CameraMode, CameraVector, ContextError};
 
 
 pub struct CameraInfoMatrix {
@@ -11,28 +12,28 @@ pub struct CameraInfoMatrix {
     /// column 2 = camera target
     /// column 3 = camera right
     /// column 4 = camera up
-    camera_matrix:Matrix<f32>
+    camera_matrix:Matrix<f32, 2>
 }
 
 impl CameraInfoMatrix {
-    pub fn get_camera_matrix(self) -> Matrix<f32> {
+    pub fn get_camera_matrix(self) -> Matrix<f32, 2> {
         self.camera_matrix
     }
     pub fn instantiate(position:Vector<f32>, target:Vector<f32>, right:Vector<f32>, up:Vector<f32>) -> Self {
         Self {
             camera_matrix : Matrix {
-                shape:vec![4, 4],
+                shape:[4, 4],
                 array:[
                     position.array,
                     target.array,
                     right.array,
                     up.array
                 ].concat()
-            }.transpose().unwrap()
+            }.transpose()
         }
     }
 
-    fn matmul_by_left(&mut self, left:Matrix<f32>) -> Result<(), MatrixError> {
+    fn matmul_by_left(&mut self, left:Matrix<f32, 2>) -> Result<(), ContextError> {
         self.camera_matrix = left.matmul(&self.camera_matrix)?;
         Ok(())
     }
@@ -78,7 +79,7 @@ impl CameraInfoMatrix {
             CameraVector::Target => self.camera_matrix.get_col(1),
             CameraVector::Right => self.camera_matrix.get_col(2),
             CameraVector::Up => self.camera_matrix.get_col(3),
-        }.unwrap().to_vector().unwrap();
+        }.unwrap().to_vector();
         Vector::from_slice(&cam_vec_4d.array[0..3])
     }
 
@@ -133,7 +134,7 @@ impl Camera {
     // reference
     // https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/orthographic-projection-matrix.html
     pub fn get_orthographic_projection(&self, aspect_ratio:f32)
-                -> Matrix<f32> {
+                -> Matrix<f32, 2> {
         let l = -1.0 * aspect_ratio * self.zoom;
         let r = aspect_ratio * self.zoom;
         let b = -1.0 * self.zoom;
@@ -157,7 +158,7 @@ impl Camera {
         orthographic_projection
     }
 
-    pub fn get_look_at_matrix(&self) -> Result<Matrix<f32>, MatrixError> {
+    pub fn get_look_at_matrix(&self) -> Result<Matrix<f32, 2>, ContextError> {
         let r = self.camera_info_matrix.get_camera(CameraVector::Right);
         let u = self.camera_info_matrix.get_camera(CameraVector::Up);
         let d = self.camera_info_matrix.get_camera_view_vector().normalise()?;
@@ -178,7 +179,7 @@ impl Camera {
         Ok(look_at_matrix)
     }
 
-    pub fn get_camera_view_matrix(&self) -> Result<Matrix<f32>, MatrixError> {
+    pub fn get_camera_view_matrix(&self) -> Result<Matrix<f32, 2>, ContextError> {
         let view_matrix = self.get_look_at_matrix()?;
         Ok(view_matrix)
     }
@@ -192,7 +193,7 @@ impl Camera {
     /// translates the camera position and camera target a certain amount
     /// forwards, to the right, and upwards based off of its
     /// internal axes
-    pub fn translation_by_internal_axes(&mut self, forward:f32, right:f32, up:f32) -> Result<(), MatrixError> {
+    pub fn translation_by_internal_axes(&mut self, forward:f32, right:f32, up:f32) -> Result<(), ContextError> {
         let df = self.camera_info_matrix.get_camera_view_vector().normalise()?.multiply_by_constant(forward);
         let dr = self.camera_info_matrix.get_camera(CameraVector::Right).normalise()?.multiply_by_constant(right);
         let du = self.camera_info_matrix.get_camera(CameraVector::Up).normalise()?.multiply_by_constant(up);
@@ -203,14 +204,14 @@ impl Camera {
     }
 
     /// rotates the camera about the origin along an arbitrary axis
-    pub fn rotation_about_origin(&mut self, axis:Vector<f32>, rotation:f32) -> Result<(), MatrixError> {
+    pub fn rotation_about_origin(&mut self, axis:Vector<f32>, rotation:f32) -> Result<(), ContextError> {
         let rotate = Matrix::rotate_about_arbitrary_axis(axis, rotation);
         self.camera_info_matrix.matmul_by_left(rotate)
     }
 
     /// rotates the camera about the target along its internal axes
     /// as such, the target position is invariant under this transformation
-    pub fn rotation_about_target(&mut self, axis:CameraAxis, rotation:f32) -> Result<(), MatrixError> {
+    pub fn rotation_about_target(&mut self, axis:CameraAxis, rotation:f32) -> Result<(), ContextError> {
         let axis = match axis {
             CameraAxis::Up => self.camera_info_matrix.get_camera(CameraVector::Right).multiply_by_constant(-1.0),
             CameraAxis::Right => self.camera_info_matrix.get_camera(CameraVector::Up),
@@ -220,14 +221,16 @@ impl Camera {
         let plain_rotate = Matrix::rotate_about_arbitrary_axis(axis, rotation);
 
         let target_pos_original = self.camera_info_matrix.get_camera(CameraVector::Target);
-        self.camera_info_matrix.translate_position(target_pos_original.multiply_by_constant(-1.0));
+        let target_pos_inverse = self.camera_info_matrix.get_camera(CameraVector::Target).multiply_by_constant(-1.0);
+        self.camera_info_matrix.translate_position(target_pos_inverse);
+        //self.camera_info_matrix.translate_position(target_pos_original.multiply_by_constant(-1.0));
         self.camera_info_matrix.matmul_by_left(plain_rotate)?;
         self.camera_info_matrix.translate_position(target_pos_original);
         Ok(())
     }
 
 
-    pub fn rotation_about_origin_on_xyz(&mut self, rotation:Vector<f32>) -> Result<(), MatrixError> {
+    pub fn rotation_about_origin_on_xyz(&mut self, rotation:Vector<f32>) -> Result<(), ContextError> {
         let rotate_about_origin = Matrix::rotate(rotation)?;
         self.camera_info_matrix.matmul_by_left(rotate_about_origin)
     }

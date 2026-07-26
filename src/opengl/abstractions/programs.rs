@@ -6,9 +6,11 @@ use crate::enums::{
 };
 use crate::opengl::intermediate_opengl;
 
-use crate::opengl::abstractions2::WithObject;
+use crate::opengl::abstractions::WithObject;
 
-use numeracy::matrices::Matrix;
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
+
 
 include!(concat!(env!("OUT_DIR"), "\\shaders_glsl.rs"));
 
@@ -46,9 +48,12 @@ impl Programs {
         match program_type {
             ProgramSelect::SelectBlinnPhongOrthographic => {
                 let vertex_text   = BLINN_PHONG_ORTHOGRAPHIC_VERTEX;
-                let fragment_text = BLINN_PHONG_ORTHOGRAPHIC_FRAGMENT;
+                let fragment_text = BLINN_PHONG_ORTHOGRAPHIC_FRAGMENT
+                .replace("find_and_replace_with_max_number_of_point_lights", &point_max.to_string())
+                .replace("find_and_replace_with_max_number_of_directional_lights", &dir_max.to_string())
+                .replace("find_and_replace_with_max_number_of_spot_lights", &spot_max.to_string());
                 let shader_id = Programs::compile_program_from_text(
-                    opengl, vertex_text, fragment_text
+                    opengl, vertex_text, &fragment_text
                 )?;
                 Ok(shader_id)
             },
@@ -71,8 +76,8 @@ impl Programs {
             ProgramSelect::SelectPhongTexture => {
                 let vertex_text   = PHONG_TEXTURE_VERTEX;
                 let fragment_text = PHONG_TEXTURE_FRAGMENT
-                .replace("find_and_replace_with_max_number_of_point_lights", &dir_max.to_string())
-                .replace("find_and_replace_with_max_number_of_directional_lights", &point_max.to_string())
+                .replace("find_and_replace_with_max_number_of_point_lights", &point_max.to_string())
+                .replace("find_and_replace_with_max_number_of_directional_lights", &dir_max.to_string())
                 .replace("find_and_replace_with_max_number_of_spot_lights", &spot_max.to_string());
                 let shader_id = Programs::compile_program_from_text(
                     opengl, vertex_text, &fragment_text
@@ -135,7 +140,7 @@ impl Programs {
         self.current_program_type = None;
     }
 
-    pub fn set_uniform<T:Clone>(&self, opengl:&Gl, uniform_name:&str, uniform_type:UniformType, value:Matrix<T>
+    pub fn set_uniform<T:Clone, const N:usize>(&self, opengl:&Gl, uniform_name:&str, uniform_type:UniformType, value:Matrix<T, N>
     ) -> Result<(), GlError> {
         match self.current_program {
             Some(id) => intermediate_opengl::set_uniform(opengl, id, uniform_name, uniform_type, value.as_ptr()),
@@ -143,9 +148,9 @@ impl Programs {
         }
     }
 
-    pub fn draw<T:Clone>(
+    pub fn draw<T:Clone, const N:usize>(
         &self, objects:WithObject, call:DrawCall,
-        mode:DrawMode, data:&Matrix<T>,
+        mode:DrawMode, data:&Matrix<T, N>,
     ) -> Result<(), GlError> {
 
         let format = objects.get_data_format();

@@ -7,11 +7,11 @@ use crate::enums::{
     GlEnable, GlError, InternalFormat,
     Object, OpenglTexture, ShaderType,
     TextureMagFilter, TextureMinFilter, TextureTarget,
-    TextureWrap, TextureWrapping, UniformType,
+    TextureWrap, TextureWrapping, UniformType, UpdateVertexAttrib,
 };
 
 use std::ffi::CString;
-use std::os::raw::c_void;
+use std::os::raw::{self, c_void};
 
 
 
@@ -245,24 +245,64 @@ pub fn buffer_data(
 
 pub fn set_vertex_attrib_position_3(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
     set_vertex_attrib(opengl, loc, 3, len, offset, dtype_size);
+    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
 }
 
 pub fn set_vertex_attrib_normal_3(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
     set_vertex_attrib(opengl, loc, 3, len, offset, dtype_size);
+    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
 }
 
 pub fn set_vertex_attrib_colour_3(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
     set_vertex_attrib(opengl, loc, 3, len, offset, dtype_size);
+    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
 }
 
 pub fn set_vertex_attrib_alpha_1(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
     set_vertex_attrib(opengl, loc, 1, len, offset, dtype_size);
+    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
 }
 
 pub fn set_vertex_attrib_texture_2(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
     set_vertex_attrib(opengl, loc, 2, len, offset, dtype_size);
+    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
 }
 
+pub fn set_vertex_attrib_mat4(opengl:&Gl, initial_loc:u32, dtype_size:i32, frequency:UpdateVertexAttrib) {
+
+    
+        //intermediate_opengl::set_vertex_attrib(opengl, 5, 4, 16, 0, float_size);
+        //intermediate_opengl::set_vertex_attrib_divisor(opengl, 5, UpdateVertexAttrib::PerInstance(1));
+//
+        //intermediate_opengl::set_vertex_attrib(opengl, 6, 4, 16, 0+4, float_size);
+        //intermediate_opengl::set_vertex_attrib_divisor(opengl, 6, UpdateVertexAttrib::PerInstance(1));
+//
+        //intermediate_opengl::set_vertex_attrib(opengl, 7, 4, 16, 0+4+4, float_size);
+        //intermediate_opengl::set_vertex_attrib_divisor(opengl, 7, UpdateVertexAttrib::PerInstance(1));
+//
+        //intermediate_opengl::set_vertex_attrib(opengl, 8, 4, 16, 0+4+4+4, float_size);
+        //intermediate_opengl::set_vertex_attrib_divisor(opengl, 8, UpdateVertexAttrib::PerInstance(1));
+
+
+    set_vertex_attrib(opengl, initial_loc, 4, 16, 0, dtype_size);
+    set_vertex_attrib_divisor(opengl, initial_loc, frequency);
+    
+    set_vertex_attrib(opengl, initial_loc+1, 4, 16, 0+4, dtype_size);
+    set_vertex_attrib_divisor(opengl, initial_loc+1, frequency);
+    
+    set_vertex_attrib(opengl, initial_loc+2, 4, 16, 0+4+4, dtype_size);
+    set_vertex_attrib_divisor(opengl, initial_loc+2, frequency);
+    
+    set_vertex_attrib(opengl, initial_loc+3, 4, 16, 0+4+4+4, dtype_size);
+    set_vertex_attrib_divisor(opengl, initial_loc+3, frequency);
+}
+
+pub fn set_vertex_attrib_divisor(opengl:&Gl, layout_location:u32, update_frequency:UpdateVertexAttrib) {
+    match update_frequency {
+        UpdateVertexAttrib::PerVertex => raw_opengl::vertex_attrib_divisor(opengl, layout_location, 0),
+        UpdateVertexAttrib::PerInstance(num) => raw_opengl::vertex_attrib_divisor(opengl, layout_location, num),
+    }
+}
 
 pub fn set_vertex_attrib(opengl:&Gl, layout_location:u32, num_items:i32, stride:i32, offset:i32, dtype_size:i32){    
     let stride = stride * dtype_size;
@@ -277,6 +317,28 @@ pub fn buffer_sub_data(opengl:&Gl, target:BufferObject, size:isize, data:*const 
     match target {
         BufferObject::VertexBufferObject => raw_opengl::buffer_sub_data(opengl, gl::ARRAY_BUFFER, size, data),
         BufferObject::ElementBufferObject => raw_opengl::buffer_sub_data(opengl, gl::ELEMENT_ARRAY_BUFFER, size, data),
+    }
+}
+
+
+pub fn draw_arrays_instanced(opengl:&Gl, mode:DrawMode, num_shapes:i32, instance_count:i32) {
+    raw_opengl::point_size(opengl, 10.0);
+    match mode {
+        DrawMode::GlPoints        => raw_opengl::draw_arrays_instanced(opengl, gl::POINTS, num_shapes, instance_count),
+        DrawMode::GlLines         => raw_opengl::draw_arrays_instanced(opengl, gl::LINES, num_shapes, instance_count),
+        DrawMode::GlTriangles     => raw_opengl::draw_arrays_instanced(opengl, gl::TRIANGLES, num_shapes, instance_count),
+        DrawMode::GlTriangleStrip => raw_opengl::draw_arrays_instanced(opengl, gl::TRIANGLE_STRIP, num_shapes, instance_count),
+    }
+}
+
+
+pub fn draw_elements_instanced(opengl:&Gl, mode:DrawMode, num_indices:i32, instance_count:i32) {
+    raw_opengl::point_size(opengl, 10.0);
+    match mode {
+        DrawMode::GlPoints        => raw_opengl::draw_elements_instanced(opengl, gl::POINTS, num_indices, instance_count),
+        DrawMode::GlLines         => raw_opengl::draw_elements_instanced(opengl, gl::LINES, num_indices, instance_count),
+        DrawMode::GlTriangles     => raw_opengl::draw_elements_instanced(opengl, gl::TRIANGLES, num_indices, instance_count),
+        DrawMode::GlTriangleStrip => raw_opengl::draw_elements_instanced(opengl, gl::TRIANGLE_STRIP, num_indices, instance_count),
     }
 }
 

@@ -2,7 +2,8 @@ use std::fs;
 
 use crate::enums::{ImageFormat, PPMType};
 
-use numeracy::matrices::Matrix;
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
 
 use zune_jpeg;
 use zune_png;
@@ -14,7 +15,7 @@ pub struct PPM {
     pub height:usize,
     pub max_colour_val:u16,
     /// shape of data is [3, width, height]
-    pub data:Matrix<u8>,
+    pub data:Matrix<u8, 2>,
 }
 
 
@@ -85,9 +86,9 @@ impl Image {
         let (pixels, width, height, nchannels) = Self::get_data_from_bytes(file_bytes, format);
 
         
-        let pixels_matrix = Matrix {shape:vec![width*nchannels, height], array:pixels.clone()};
+        let pixels_matrix = Matrix {shape:[width*nchannels, height], array:pixels.clone()};
         let data = if flip {
-            pixels_matrix.flip_vertically().unwrap()
+            pixels_matrix.flip_vertically()
         } else {
             pixels_matrix
         };
@@ -106,7 +107,7 @@ impl Image {
     pub fn decode_from_ppm(ppm:PPM, flip:bool) -> Image {
 
         let data = if flip {
-            ppm.data.flip_vertically().unwrap()
+            ppm.data.flip_vertically()
         } else {
             ppm.data
         };

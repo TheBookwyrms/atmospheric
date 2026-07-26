@@ -2,11 +2,12 @@ use crate::opengl::gl::Gl;
 use crate::enums::{
     ArrayObject, BufferObject, DataFormat,
     DrawCall, DrawMode, DrawType,
-    GlError, Object, TextureTarget,
+    GlError, Object, TextureTarget, UpdateVertexAttrib,
 };
 use crate::opengl::intermediate_opengl;
 
-use numeracy::matrices::Matrix;
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
 
 use std::os::raw::c_void;
 
@@ -92,7 +93,7 @@ impl WithObject<'_> {
         }
     }
 
-    pub fn buffer_data<T:Clone>(&self, data:&Matrix<T>, draw_type:DrawType, object:Object) -> Result<(), GlError> {
+    pub fn buffer_data<T:Clone, const N:usize>(&self, data:&Matrix<T, N>, draw_type:DrawType, object:Object) -> Result<(), GlError> {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
         match object {
@@ -119,7 +120,7 @@ impl WithObject<'_> {
         }
     }
 
-    pub fn buffer_sub_data(&self, data:&Matrix<f32>, object:Object) -> Result<(), GlError> {
+    pub fn buffer_sub_data(&self, data:&Matrix<f32, 2>, object:Object) -> Result<(), GlError> {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
 
@@ -176,29 +177,48 @@ impl WithObject<'_> {
         Ok(())
     }
 
-    pub fn draw<T:Clone>(&self, call:DrawCall, mode:DrawMode, data:&Matrix<T>) -> Result<(), GlError> {
+    pub fn get_location_after_vertex_attribs(&self) -> u32 {
+        match self.data_format {
+            DataFormat::Position3Colour3Alpha1 => { 3 },
+            DataFormat::Position3Colour3Alpha1Normal3 => { 4 },
+            DataFormat::Position3Colour3Alpha1Normal3Texture2 => { 5 },
+            DataFormat::Position3Texture2 => { 2 },
+        }
+    }
+
+    pub fn set_vertex_attrib_mat4_per_instance(&self, dtype_size:i32) -> Result<(), GlError> {
+        if self.vao == 0 { Err(GlError::ObjectNotBound)? }
+
+        let next_location = self.get_location_after_vertex_attribs();
+
+        intermediate_opengl::set_vertex_attrib_mat4(self.opengl, next_location, dtype_size, UpdateVertexAttrib::PerInstance(1));
+        
+        Ok(())
+    }
+
+    pub fn draw<T:Clone, const N:usize>(&self, call:DrawCall, mode:DrawMode, data:&Matrix<T, N>) -> Result<(), GlError> {
         if data.ndims() != 2 { Err(GlError::InvalidDataDims(data.ndims()))? }
 
         match call {
-            DrawCall::Vertices => {
-                if self.vbo != 0 && self.vao == 0 && self.ebo == 0 { Err(GlError::InvalidObjectType)? }
-                //if self.object_type != Object::VBO { Err(GlError::InvalidObjectType)? }
-                let is_ok_format = match self.data_format {
-                    DataFormat::Position3Colour3Alpha1 => true,
-                    DataFormat::Position3Colour3Alpha1Normal3 => true,
-                    DataFormat::Position3Texture2 => false,
-                    DataFormat::Position3Colour3Alpha1Normal3Texture2 => false, // untested, false to be safe
-                    //DataFormat::Position3Colour3Alpha1Normal3Texture2 => true, // untested, true to be safe
-                };
-                if !is_ok_format { Err(GlError::InvalidDataFormat)? }
-
-                let dtype_memsize = match data.dtype_memsize().try_into() {
-                    Ok(dtype_size) => Ok(dtype_size),
-                    Err(error) => Err(GlError::TryFromIntError(error)),
-                }?;
-
-                self.set_vertex_attribs(dtype_memsize)
-            },
+            //DrawCall::Vertices => {
+            //    if self.vbo != 0 && self.vao == 0 && self.ebo == 0 { Err(GlError::InvalidObjectType)? }
+            //    //if self.object_type != Object::VBO { Err(GlError::InvalidObjectType)? }
+            //    let is_ok_format = match self.data_format {
+            //        DataFormat::Position3Colour3Alpha1 => true,
+            //        DataFormat::Position3Colour3Alpha1Normal3 => true,
+            //        DataFormat::Position3Texture2 => false,
+            //        DataFormat::Position3Colour3Alpha1Normal3Texture2 => false, // untested, false to be safe
+            //        //DataFormat::Position3Colour3Alpha1Normal3Texture2 => true, // untested, true to be safe
+            //    };
+            //    if !is_ok_format { Err(GlError::InvalidDataFormat)? }
+            //
+            //    let dtype_memsize = match data.dtype_memsize().try_into() {
+            //        Ok(dtype_size) => Ok(dtype_size),
+            //        Err(error) => Err(GlError::TryFromIntError(error)),
+            //    }?;
+            //
+            //    self.set_vertex_attribs(dtype_memsize)
+            //},
             DrawCall::Arrays => {
                 if self.vao == 0 || self.ebo != 0 { Err(GlError::InvalidObjectType)? }
                 //if self.object_type != Object::VAO { Err(GlError::InvalidObjectType)? }
@@ -222,16 +242,54 @@ impl WithObject<'_> {
             },
         }
     }
+
+    pub fn draw_instanced<T:Clone, const N:usize>(&self, call:DrawCall, mode:DrawMode, data:&Matrix<T, N>, instance_count:i32) -> Result<(), GlError> {
+        if data.ndims() != 2 { Err(GlError::InvalidDataDims(data.ndims()))? }
+
+        match call {
+            DrawCall::Arrays => {
+                if self.vao == 0 || self.ebo != 0 { Err(GlError::InvalidObjectType)? }
+                //if self.object_type != Object::VAO { Err(GlError::InvalidObjectType)? }
+
+                let count : i32 = match data.shape[1].try_into() {
+                //let count : i32 = match data.shape[1].try_into() {
+                    Ok(i) => Ok(i),
+                    Err(error) => Err(GlError::TryFromIntError(error)),
+                }?;
+
+                intermediate_opengl::draw_arrays_instanced(self.opengl, mode, count, instance_count);
+                Ok(())
+            },
+            DrawCall::Elements => {
+                if self.vao == 0 || self.ebo == 0 { Err(GlError::InvalidObjectType)? }
+                //if self.object_type != Object::VAO { Err(GlError::InvalidObjectType)? }
+
+                let count = data.shape.iter().map(|s| *s as i32).product();
+
+                intermediate_opengl::draw_elements_instanced(&self.opengl, mode, count, instance_count);
+                Ok(())
+            },
+        }
+    }
     
 }
 impl Drop for WithObject<'_> {
     fn drop(&mut self) {
-        intermediate_opengl::bind_vertex_array(self.opengl, ArrayObject::VertexArrayObject, 0);
-        intermediate_opengl::bind_buffer(self.opengl, BufferObject::VertexBufferObject, 0);
-        intermediate_opengl::bind_buffer(self.opengl, BufferObject::VertexBufferObject, 0);
-        if self.texture_type.is_some() {
-            intermediate_opengl::bind_texture(self.opengl, self.texture_type.unwrap(), 0);
+        if self.get_vao() != 0 {
+            intermediate_opengl::bind_vertex_array(self.opengl, ArrayObject::VertexArrayObject, 0);
         }
+        if self.get_vbo() != 0 {
+            intermediate_opengl::bind_buffer(self.opengl, BufferObject::VertexBufferObject, 0);
+        }
+        if self.get_ebo() != 0 {
+            intermediate_opengl::bind_buffer(self.opengl, BufferObject::ElementBufferObject, 0);
+        }
+        if let Some(texture_type) = self.texture_type {
+            intermediate_opengl::bind_texture(self.opengl, texture_type, 0);
+        }
+        //if self.texture_type.is_some() {
+        //    intermediate_opengl::bind_texture(self.opengl, self.texture_type.unwrap(), 0);
+        //}
     }
 }
 

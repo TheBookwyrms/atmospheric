@@ -1,5 +1,6 @@
 use glfw::{InitError, WindowEvent};
 use numeracy::enums::MatrixError;
+use numeracy::matrices2::MatrixError as MatrixErrorNew;
 use std::str::Utf8Error;
 use std::num::TryFromIntError;
 use std::ffi::NulError;
@@ -34,7 +35,8 @@ pub enum GlError {
     AlreadyDeactivated(OpenglTexture),
     NoProgramBound,
     InvalidIndex(usize),
-    InvalidCustomProgramSelect
+    InvalidCustomProgramSelect,
+    InvalidDrawInstancing,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -132,7 +134,7 @@ impl From<TextureTarget> for Object {
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum DrawCall {
-    Vertices,
+    //Vertices, // deprecated because why would you ever use it
     Arrays,
     Elements,
 }
@@ -241,6 +243,8 @@ pub enum ContextError {
     TryFromIntError(TryFromIntError),
     DataLengthError(usize),
     MatrixError(MatrixError),
+    MatrixErrorDim1(MatrixErrorNew<1>),
+    MatrixErrorDim2(MatrixErrorNew<2>),
     MaxDirectionalLightsGenerated,
     MaxPointLightsGenerated,
     MaxSpotLightsGenerated,
@@ -255,6 +259,18 @@ impl From<GlError> for ContextError {
 impl From<MatrixError> for ContextError {
     fn from(value: MatrixError) -> Self {
         Self::MatrixError(value)
+    }
+}
+
+impl From<MatrixErrorNew<1>> for ContextError {
+    fn from(value: MatrixErrorNew<1>) -> Self {
+        Self::MatrixErrorDim1(value)
+    }
+}
+
+impl From<MatrixErrorNew<2>> for ContextError {
+    fn from(value: MatrixErrorNew<2>) -> Self {
+        Self::MatrixErrorDim2(value)
     }
 }
 
@@ -320,4 +336,10 @@ pub enum LightSourceForm {
     Directional,
     Point,
     Spot,
+}
+
+#[derive(Clone, Copy)]
+pub enum UpdateVertexAttrib {
+    PerVertex,
+    PerInstance(u32)
 }

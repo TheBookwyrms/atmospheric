@@ -8,8 +8,9 @@ use crate::enums::{
 use crate::lighting::LightingGenerator;
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
-use crate::opengl::abstractions2::{Programs, Textures, Uniform, WithObject};
-use numeracy::matrices::Matrix;
+use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
 
 use glfw;
 use glfw::{Action, Key};
@@ -86,7 +87,7 @@ impl<'a> Context<'a> {
 
 
 
-    pub fn create_vao_vbo_ebo(&self, vertices:&Matrix<f32>, indices:&Matrix<i32>, format:DataFormat
+    pub fn create_vao_vbo_ebo(&self, vertices:&Matrix<f32, 2>, indices:&Matrix<i32, 2>, format:DataFormat
     ) -> Result<(u32, u32, u32), ContextError> {
 
         let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
@@ -103,7 +104,7 @@ impl<'a> Context<'a> {
     }
 
 
-    pub fn create_vao_vbo(&self, data:&Matrix<f32>, format:DataFormat) -> Result<(u32, u32), ContextError> {
+    pub fn create_vao_vbo(&self, data:&Matrix<f32, 2>, format:DataFormat) -> Result<(u32, u32), ContextError> {
         let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
         let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
 
@@ -115,7 +116,7 @@ impl<'a> Context<'a> {
     }
 
 
-    pub fn set_custom_uniform<T:Clone>(&self, program_id:u32, uniform:Uniform, value:Matrix<T>) -> Result<(), GlError> {
+    pub fn set_custom_uniform<T:Clone, const N:usize>(&self, program_id:u32, uniform:Uniform, value:Matrix<T, N>) -> Result<(), GlError> {
         intermediate_opengl::set_uniform(&self.window.opengl, program_id, uniform.name, uniform.uniform_type, value.as_ptr())
     }
 
@@ -152,7 +153,7 @@ impl<'a> Context<'a> {
         Ok(())
     }
 
-    pub fn set_world_transform_uniform(&self, transform:Matrix<f32>) -> Result<(), ContextError> {
+    pub fn set_world_transform_uniform(&self, transform:Matrix<f32, 2>) -> Result<(), ContextError> {
         
         let model_transform = Matrix::opengl_to_right_handed().matmul(&transform)?;
 
@@ -182,13 +183,15 @@ impl<'a> Context<'a> {
 
 
 
-    fn set_blinn_phong_uniforms(&self) -> Result<(), ContextError> {
+    pub fn set_blinn_phong_uniforms(&self) -> Result<(), ContextError> {
 
 
 
             
         self.programs.set_uniform(&self.window.opengl,"camera_viewpos", UniformType::Vec3,
-            Matrix::from_vector(self.camera.camera_info_matrix.get_camera(crate::enums::CameraVector::Position)))?;
+            Matrix::from_vector(
+                self.camera.camera_info_matrix.get_camera(crate::enums::CameraVector::Position)
+            ))?;
 
 
         Ok(())

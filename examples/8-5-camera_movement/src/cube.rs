@@ -1,4 +1,5 @@
-use numeracy::matrices::Matrix;
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
 
 fn arr7d(pos:[f32; 3], col:[f32; 3], a:f32) -> [f32; 7] {
     [pos[0], pos[1], pos[2], col[0], col[1], col[2], a]

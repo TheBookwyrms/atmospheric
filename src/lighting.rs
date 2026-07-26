@@ -1,8 +1,9 @@
 use crate::config::RenderInitialConfig;
 use crate::context::Context;
 use crate::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
-use crate::opengl::abstractions2::WithObject;
-use numeracy::matrices::Matrix;
+use crate::opengl::abstractions::WithObject;
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
 use numeracy::vectors::Vector;
 
 #[derive(Clone, Copy)]
@@ -12,6 +13,11 @@ pub struct LightCounter {
     spot_lights:u16,
 }
 impl LightCounter {
+    /// all must have a maximum greater than 0
+    pub const fn max_values(directional:u16, point:u16, spot:u16) -> LightCounter {
+        assert!(directional>0 && point>0 && spot>0);
+        LightCounter { directional_lights: directional, point_lights: point, spot_lights: spot }
+    }
     pub const fn new_from(directional:u16, point:u16, spot:u16) -> LightCounter {
         LightCounter { directional_lights: directional, point_lights: point, spot_lights: spot }
     }
@@ -122,7 +128,7 @@ impl LightingGenerator{
         let (vao, vbo) = render.create_vao_vbo(
             &Matrix::from_vector(
                 Vector::from_vec([position, diffuse_colour].concat()).extend([1.0])
-            ), DataFormat::Position3Colour3Alpha1
+            ).new_axis(), DataFormat::Position3Colour3Alpha1
         )?;
 
         Ok(
@@ -242,35 +248,35 @@ impl PointLight {
             &context.window.opengl,
             &format!("point_lights[{}].position", self.point_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.position)
+            Matrix::from_2darray([self.position])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("point_lights[{}].ambient_colour", self.point_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.ambient_colour)
+            Matrix::from_2darray([self.ambient_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("point_lights[{}].diffuse_colour", self.point_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.diffuse_colour)
+            Matrix::from_2darray([self.diffuse_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("point_lights[{}].specular_colour", self.point_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.specular_colour)
+            Matrix::from_2darray([self.specular_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("point_lights[{}].attenuation_factor", self.point_light_index),
             UniformType::Float,
-            Matrix::from_scalar(self.attenuation.get_attenuation_factor())
+            Matrix::from_2darray([[self.attenuation.get_attenuation_factor()]])
         )?;
         Ok(())
     }
-    pub fn get_vertex_data(&self) -> Matrix<f32> {
+    pub fn get_vertex_data(&self) -> Matrix<f32, 2> {
         let mut arr = [self.position, self.diffuse_colour].concat();
         arr.push(1.);
         Matrix::from_vec(arr).new_axis()
@@ -281,6 +287,7 @@ impl PointLight {
         self.position[2] += translation[2];
     }
     pub fn get_position(&self) -> [f32;3] { self.position }
+    pub fn set_position(&mut self, pos:[f32;3]) { self.position = pos }
     pub fn set_light(&mut self, light:LightForm, colour:[f32;3]) {
         match light {
             LightForm::Ambient  => self.ambient_colour  = colour,
@@ -323,25 +330,25 @@ impl DirectionalLight {
             &context.window.opengl,
             &format!("directional_lights[{}].direction", self.directional_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.direction)
+            Matrix::from_2darray([self.direction])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("directional_lights[{}].ambient_colour", self.directional_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.ambient_colour)
+            Matrix::from_2darray([self.ambient_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("directional_lights[{}].diffuse_colour", self.directional_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.diffuse_colour)
+            Matrix::from_2darray([self.diffuse_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("directional_lights[{}].specular_colour", self.directional_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.specular_colour)
+            Matrix::from_2darray([self.specular_colour])
         )?;
         Ok(())
     }
@@ -377,49 +384,49 @@ impl SpotLight {
             &context.window.opengl,
             &format!("spot_lights[{}].position", self.spot_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.position)
+            Matrix::from_2darray([self.position])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("spot_lights[{}].direction", self.spot_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.direction)
+            Matrix::from_2darray([self.direction])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("spot_lights[{}].ambient_colour", self.spot_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.ambient_colour)
+            Matrix::from_2darray([self.ambient_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("spot_lights[{}].diffuse_colour", self.spot_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.diffuse_colour)
+            Matrix::from_2darray([self.diffuse_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("spot_lights[{}].specular_colour", self.spot_light_index),
             UniformType::Vec3,
-            Matrix::from_1darray(self.specular_colour)
+            Matrix::from_2darray([self.specular_colour])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("spot_lights[{}].inner_cutoff_angle", self.spot_light_index),
             UniformType::Float,
-            Matrix::from_scalar(self.cos_of_inner_cutoff_angle)
+            Matrix::from_2darray([[self.cos_of_inner_cutoff_angle]])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("spot_lights[{}].outer_cutoff_angle", self.spot_light_index),
             UniformType::Float,
-            Matrix::from_scalar(self.cos_of_outer_cutoff_angle)
+            Matrix::from_2darray([[self.cos_of_outer_cutoff_angle]])
         )?;
         context.programs.set_uniform(
             &context.window.opengl,
             &format!("spot_lights[{}].attenuation_factor", self.spot_light_index),
             UniformType::Float,
-            Matrix::from_scalar(self.attenuation.get_attenuation_factor())
+            Matrix::from_2darray([[self.attenuation.get_attenuation_factor()]])
         )?;
         Ok(())
     }
@@ -428,10 +435,12 @@ impl SpotLight {
         self.position[1] += translation[1];
         self.position[2] += translation[2];
     }
+    /// rotation in degrees
     pub fn rotate(&mut self, rotation:[f32; 3]) -> Result<(), ContextError> {
         let direction = Vector::from_1darray(self.direction).extend([0.0]);
         let rotation = Matrix::rotate(Vector::from_1darray(rotation))?;
-        rotation.matmul(&Matrix::from_vector(direction))?;
+        let rotated = rotation.matmul(&Matrix::from_vector(direction).new_axis().transpose())?;
+        self.direction = [rotated.array[0], rotated.array[1], rotated.array[2]];
         Ok(())
     }
 }

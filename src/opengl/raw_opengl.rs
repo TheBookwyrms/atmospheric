@@ -103,6 +103,10 @@ pub fn buffer_data(
     unsafe { opengl.BufferData(target, size, data_ptr, draw_type) }
 }
 
+pub fn vertex_attrib_divisor(opengl:&Gl, layout_location:u32, divisor:u32) {
+    unsafe { opengl.VertexAttribDivisor(layout_location, divisor); }
+}
+
 
 pub fn enable_vertex_attrib_array(opengl:&Gl, layout_location:u32) {
     unsafe { opengl.EnableVertexAttribArray(layout_location) }
@@ -142,6 +146,14 @@ pub fn draw_arrays(opengl:&Gl, mode:gl::types::GLenum, num_shapes:i32) {
 
 pub fn draw_elements(opengl:&Gl, mode:gl::types::GLenum, num_indices: i32) {
     unsafe { opengl.DrawElements(mode, num_indices, gl::UNSIGNED_INT, 0 as *const c_void); }
+}
+
+pub fn draw_arrays_instanced(opengl:&Gl, mode:gl::types::GLenum, num_shapes:i32, instance_count:i32) {
+    unsafe { opengl.DrawArraysInstanced(mode, 0, num_shapes, instance_count) }
+}
+
+pub fn draw_elements_instanced(opengl:&Gl, mode:gl::types::GLenum, num_indices: i32, instance_count:i32) {
+    unsafe { opengl.DrawElementsInstanced(mode, num_indices, gl::UNSIGNED_INT, 0 as *const c_void, instance_count); }
 }
 
 pub fn viewport(opengl:&Gl, x_low:i32, y_low:i32, x_high:i32, y_high:i32) {

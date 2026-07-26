@@ -17,7 +17,8 @@ use atmospheric::enums::ContextError;
 use atmospheric::enums::ImageFormat;
 use atmospheric::context::Context;
 use atmospheric::enums::{DataFormat, DrawCall, DrawMode, GlError, OpenglTexture, ProgramSelect, TextureTarget, UniformType};
-use numeracy::matrices::Matrix;
+//use numeracy::matrices::Matrix;
+use numeracy::matrices2::Matrix;
 
 
 use std::ffi::{CStr, CString};

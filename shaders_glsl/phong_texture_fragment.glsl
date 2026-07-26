@@ -1,8 +1,8 @@
 #version 330 core
 
-#define NUM_POINT_LIGHTS       1//find_and_replace_with_max_number_of_point_lights
-#define NUM_DIRECTIONAL_LIGHTS 1//find_and_replace_with_max_number_of_directional_lights
-#define NUM_SPOT_LIGHTS        1//find_and_replace_with_max_number_of_spot_lights
+#define NUM_POINT_LIGHTS       find_and_replace_with_max_number_of_point_lights
+#define NUM_DIRECTIONAL_LIGHTS find_and_replace_with_max_number_of_directional_lights
+#define NUM_SPOT_LIGHTS        find_and_replace_with_max_number_of_spot_lights
 
 
 struct PointLight {

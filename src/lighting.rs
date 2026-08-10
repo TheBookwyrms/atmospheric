@@ -1,9 +1,10 @@
 use crate::config::RenderInitialConfig;
 use crate::context::Context;
 use crate::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
-use crate::opengl::abstractions::WithObject;
+//use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};
+use crate::opengl::abstractions::{WithVao, WithVbo};
 //use numeracy::matrices::Matrix;
-use numeracy::matrices2::Matrix;
+use numeracy::matrices::{Matrix, S1, S2};
 use numeracy::vectors::Vector;
 
 #[derive(Clone, Copy)]
@@ -103,7 +104,7 @@ impl LightingGenerator{
         //}
     }
     pub fn generate_point_light(
-        &mut self, render:&Context, position:[f32;3], diffuse_colour:[f32;3]
+        &mut self, render:&Context, pos:[f32;3], diffuse_colour:[f32;3]
     ) -> Result<PointLight, ContextError> {
 
         let next_idx = self.get_next_light_idx_if_valid(LightSourceForm::Point)?;
@@ -125,22 +126,32 @@ impl LightingGenerator{
         //light_source_colour: (1., 1., 1.),
         let attenuation = Attenuation::new_factor(200.0, 0.66);
 
+
         let (vao, vbo) = render.create_vao_vbo(
-            &Matrix::from_vector(
-                Vector::from_vec([position, diffuse_colour].concat()).extend([1.0])
-            ).new_axis(), DataFormat::Position3Colour3Alpha1
-        )?;
+            &Matrix::from_2darray([[
+                pos[0], pos[1], pos[2], diffuse_colour[0], diffuse_colour[1], diffuse_colour[2], 1.
+                ]]), DataFormat::Position3Colour3Alpha1
+        );
+
+        //let (vao, vbo) = render.create_vao_vbo(
+        //    &Matrix::from_2darray([[
+        //        pos[0], pos[1], pos[2], diffuse_colour[0], diffuse_colour[1], diffuse_colour[2], 1.
+        //        ]]), DataFormat::Position3Colour3Alpha1
+        //    //&Matrix::from_vector(
+        //    //    Vector::from_vec([position, diffuse_colour].concat()).extend([1.0])
+        //    //).new_axis(), DataFormat::Position3Colour3Alpha1
+        //)?;
 
         Ok(
             PointLight {
-                position,
+                position: pos,
                 ambient_colour,
                 diffuse_colour,
                 specular_colour,
                 attenuation,
                 vao,
                 vbo,
-                previous_position:position,
+                previous_position:pos,
                 previous_diffuse_colour:diffuse_colour,
                 point_light_index:next_idx
             }
@@ -276,10 +287,20 @@ impl PointLight {
         )?;
         Ok(())
     }
-    pub fn get_vertex_data(&self) -> Matrix<f32, 2> {
-        let mut arr = [self.position, self.diffuse_colour].concat();
-        arr.push(1.);
-        Matrix::from_vec(arr).new_axis()
+    pub fn get_vertex_data(&self) -> Matrix<f32, 2, S2<7, 1>> {
+        let m1 = Matrix::from_2darray([self.position]);
+        let m2 = Matrix::from_2darray([self.diffuse_colour]);
+        let m3 = Matrix::from_2darray([[1.]]);
+
+        let mt = m1.expand_horizontally::<3, 6>(m2).expand_horizontally(m3);
+
+        //let a = [self.position, self.diffuse_colour]
+        //let v = Vector::from_1darray(self.position).extend(self.diffuse_colour).extend([1.]);
+        //let m = Matrix::from_vector(v);
+        mt
+        //let mut arr = [self.position, self.diffuse_colour].concat();
+        //arr.push(1.);
+        //Matrix::from_vec(arr).new_axis()
     }
     pub fn translate(&mut self, translation:[f32; 3]) {
         self.position[0] += translation[0];
@@ -296,20 +317,35 @@ impl PointLight {
         }
     }
     pub fn draw(&self, render:&Context) -> Result<(), ContextError> {
+        let opengl = &render.window.opengl;
 
-        let with_light_source = WithObject::existing(
-            &render.window.opengl, Object::VAO, self.vao, DataFormat::Position3Colour3Alpha1
-        ).add(Object::VBO, self.vbo)?;
+        let with_light_source_vao = WithVao::existing(opengl, self.vao);//, DataFormat::Position3Colour3Alpha1);
+        let with_light_source_vbo = WithVbo::existing(opengl, self.vbo);//, DataFormat::Position3Colour3Alpha1);
 
         let data = self.get_vertex_data();
 
         if (self.position != self.previous_position) || (self.diffuse_colour != self.previous_diffuse_colour) {
-            with_light_source.buffer_sub_data(&data, Object::VBO)?;
+            with_light_source_vbo.buffer_sub_data(&data);
         }
         
-        render.programs.draw(with_light_source, DrawCall::Arrays, DrawMode::GlPoints, &data)?;
+        render.programs.draw(with_light_source_vao, DrawMode::GlPoints, &data, DataFormat::Position3Colour3Alpha1)?;
         Ok(())
     }
+    //pub fn draw(&self, render:&Context) -> Result<(), ContextError> {
+//
+    //    let with_light_source = WithObject::existing(
+    //        &render.window.opengl, Object::VAO, self.vao, DataFormat::Position3Colour3Alpha1
+    //    ).add(Object::VBO, self.vbo)?;
+//
+    //    let data = self.get_vertex_data();
+//
+    //    if (self.position != self.previous_position) || (self.diffuse_colour != self.previous_diffuse_colour) {
+    //        with_light_source.buffer_sub_data(&data, Object::VBO)?;
+    //    }
+    //    
+    //    render.programs.draw(with_light_source, DrawCall::Arrays, DrawMode::GlPoints, &data)?;
+    //    Ok(())
+    //}
 }
 
 
@@ -437,10 +473,21 @@ impl SpotLight {
     }
     /// rotation in degrees
     pub fn rotate(&mut self, rotation:[f32; 3]) -> Result<(), ContextError> {
-        let direction = Vector::from_1darray(self.direction).extend([0.0]);
-        let rotation = Matrix::rotate(Vector::from_1darray(rotation))?;
-        let rotated = rotation.matmul(&Matrix::from_vector(direction).new_axis().transpose())?;
+        let dir= Matrix::from_2darray([[self.direction[0], self.direction[1], self.direction[2], 0.]]).transpose();
+        let rotm = Matrix::rotate(Vector::from_1darray(rotation));
+        //let rot = Matrix::from_2darray([[rotation[0]], [rotation[1]], [rotation[2]], [1.]]);
+        let rotated = rotm.matmul(&dir).transpose();
+        //self.direction = [rotated.array[0], rotated.array[1], rotated.array[2]];
+
+        let direction = Vector::from_1darray([self.direction[0], self.direction[1], self.direction[2], 0.]);
+        let rotation = Matrix::rotate(Vector::from_1darray(rotation));
+        let self_rotated = rotation.matmul(&Matrix::from_vector(direction).reshape(S2::<1, 4>)?);
+        //let self_direction = [rotated.array[0], rotated.array[1], rotated.array[2]];
+
+        assert!(rotated == self_rotated.transpose());
         self.direction = [rotated.array[0], rotated.array[1], rotated.array[2]];
+        //println!("new {:?}, old {:?}", self.direction, self_direction);
+
         Ok(())
     }
 }

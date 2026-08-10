@@ -8,9 +8,9 @@ use crate::enums::{
 use crate::lighting::LightingGenerator;
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
-use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
+use crate::opengl::abstractions::{Programs, Textures, Uniform, WithVao, WithVbo, WithEbo, WithVaoVbo, WithVaoEbo};
 //use numeracy::matrices::Matrix;
-use numeracy::matrices2::Matrix;
+use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
 use glfw;
 use glfw::{Action, Key};
@@ -75,7 +75,7 @@ impl<'a> Context<'a> {
             t => t,};
         //println!("dt {}", dt);
         let _fps = 1.0/dt;
-        //println!("_fps {}", fps);
+        //println!("_fps {}", _fps);
         self.current_time = Instant::now();
 
 
@@ -87,36 +87,66 @@ impl<'a> Context<'a> {
 
 
 
-    pub fn create_vao_vbo_ebo(&self, vertices:&Matrix<f32, 2>, indices:&Matrix<i32, 2>, format:DataFormat
-    ) -> Result<(u32, u32, u32), ContextError> {
+    pub fn create_vao_vbo_ebo<U:ShapeTrait<2>, V:ShapeTrait<2>>(&self, vertices:&Matrix<f32, 2, U>, indices:&Matrix<i32, 2, V>, format:DataFormat
+    ) -> (u32, u32, u32) {
 
-        let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
+        let with_vao = WithVao::new(&self.window.opengl);//, format);
         
-        let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
-        with_vbo.buffer_data(vertices, DrawType::DynamicDraw, Object::VBO)?;
+        let with_vbo = WithVbo::new(&self.window.opengl);//, format);
+        with_vbo.buffer_data(vertices, DrawType::DynamicDraw);
 
-        let with_ebo = WithObject::new(&self.window.opengl, Object::EBO, format);
-        with_ebo.buffer_data(indices, DrawType::DynamicDraw, Object::EBO)?;
+        let with_ebo = WithEbo::new(&self.window.opengl, format);
+        with_ebo.buffer_data(indices, DrawType::DynamicDraw);
 
-        with_vao.set_vertex_attribs(vertices.dtype_memsize() as i32)?;
+        with_vao.set_vertex_attribs_per_vertex(vertices.dtype_memsize() as i32, format);
 
-        Ok((with_vao.get_vao(), with_vbo.get_vbo(), with_ebo.get_ebo()))
+        (with_vao.get_vao(), with_vbo.get_vbo(), with_ebo.get_ebo())
     }
 
 
-    pub fn create_vao_vbo(&self, data:&Matrix<f32, 2>, format:DataFormat) -> Result<(u32, u32), ContextError> {
-        let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
-        let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
+    pub fn create_vao_vbo<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, format:DataFormat) -> (u32, u32) {
+        let with_vao = WithVao::new(&self.window.opengl);//, format);
+        let with_vbo = WithVbo::new(&self.window.opengl);//, format);
 
-        with_vbo.buffer_data(data, DrawType::DynamicDraw, Object::VBO)?;
+        with_vbo.buffer_data(data, DrawType::DynamicDraw);
 
-        with_vao.set_vertex_attribs(data.dtype_memsize() as i32)?;
+        with_vao.set_vertex_attribs_per_vertex(data.dtype_memsize() as i32, format);
 
-        Ok((with_vao.get_vao(), with_vbo.get_vbo()))
+        (with_vao.get_vao(), with_vbo.get_vbo())
     }
 
 
-    pub fn set_custom_uniform<T:Clone, const N:usize>(&self, program_id:u32, uniform:Uniform, value:Matrix<T, N>) -> Result<(), GlError> {
+
+    //pub fn create_vao_vbo_ebo<U:ShapeTrait<2>, V:ShapeTrait<2>>(&self, vertices:&Matrix<f32, 2, U>, indices:&Matrix<i32, 2, V>, format:DataFormat
+    //) -> Result<(u32, u32, u32), ContextError> {
+//
+    //    let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
+    //    
+    //    let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
+    //    with_vbo.buffer_data(vertices, DrawType::DynamicDraw, Object::VBO)?;
+//
+    //    let with_ebo = WithObject::new(&self.window.opengl, Object::EBO, format);
+    //    with_ebo.buffer_data(indices, DrawType::DynamicDraw, Object::EBO)?;
+//
+    //    with_vao.set_vertex_attribs(vertices.dtype_memsize() as i32)?;
+//
+    //    Ok((with_vao.get_vao(), with_vbo.get_vbo(), with_ebo.get_ebo()))
+    //}
+//
+//
+    //pub fn create_vao_vbo<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, format:DataFormat) -> Result<(u32, u32), ContextError> {
+    //    let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
+    //    let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
+//
+    //    with_vbo.buffer_data(data, DrawType::DynamicDraw, Object::VBO)?;
+//
+    //    with_vao.set_vertex_attribs(data.dtype_memsize() as i32)?;
+//
+    //    Ok((with_vao.get_vao(), with_vbo.get_vbo()))
+    //}
+
+
+    pub fn set_custom_uniform<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, program_id:u32, uniform:Uniform, value:Matrix<T, N, U>) -> Result<(), GlError> {
         intermediate_opengl::set_uniform(&self.window.opengl, program_id, uniform.name, uniform.uniform_type, value.as_ptr())
     }
 
@@ -153,9 +183,9 @@ impl<'a> Context<'a> {
         Ok(())
     }
 
-    pub fn set_world_transform_uniform(&self, transform:Matrix<f32, 2>) -> Result<(), ContextError> {
+    pub fn set_world_transform_uniform(&self, transform:Matrix<f32, 2, S2<4, 4>>) -> Result<(), ContextError> {
         
-        let model_transform = Matrix::opengl_to_right_handed().matmul(&transform)?;
+        let model_transform = Matrix::opengl_to_right_handed().matmul(&transform);
 
         self.programs.set_uniform(&self.window.opengl, "world_transform",
             UniformType::Mat4, model_transform)?;
@@ -167,7 +197,7 @@ impl<'a> Context<'a> {
         // opengl, id, uniform_name, uniform_type, value
 
         // model
-        self.set_world_transform_uniform(Matrix::identity(4))?;
+        self.set_world_transform_uniform(Matrix::identity())?;
 
         // view
         self.programs.set_uniform(&self.window.opengl, "camera_transformation", UniformType::Mat4,

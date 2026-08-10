@@ -10,6 +10,14 @@ impl MaterialLightQualities {
     pub fn get_diffuse(&self)   -> [f32; 3] { self.diffuse_reflected_light }
     pub fn get_specular(&self)  -> [f32; 3] { self.specular_reflected_light }
     pub fn get_shininess(&self) ->       f32       { self.shininess }
+    pub fn get_components_array(&self) -> [f32; 10] {
+        [
+            self.ambient_reflected_light[0], self.ambient_reflected_light[1], self.ambient_reflected_light[2],
+            self.diffuse_reflected_light[0], self.diffuse_reflected_light[1], self.diffuse_reflected_light[2],
+            self.specular_reflected_light[0], self.specular_reflected_light[1], self.specular_reflected_light[2],
+            self.shininess
+        ]
+    }
     pub fn assign(ambient:[f32;3], diffuse:[f32;3], specular:[f32;3], shininess:f32) -> Self {
         Self {
             ambient_reflected_light:ambient,

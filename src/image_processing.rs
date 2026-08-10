@@ -3,7 +3,7 @@ use std::fs;
 use crate::enums::{ImageFormat, PPMType};
 
 //use numeracy::matrices::Matrix;
-use numeracy::matrices2::Matrix;
+use numeracy::matrices::Matrix;
 
 use zune_jpeg;
 use zune_png;
@@ -14,12 +14,13 @@ pub struct PPM {
     pub width:usize,
     pub height:usize,
     pub max_colour_val:u16,
-    /// shape of data is [3, width, height]
-    pub data:Matrix<u8, 2>,
+    ///// shape of data is [3*width, height]
+    /// a lie, because the real shape should be [3*width, height]
+    pub data:Vec<u8>,
 }
 
 
-
+#[derive(Debug, Clone)]
 pub struct Image {
     //pub raw:Vec<u8>,
     //pub pixels:Vec<u8>,
@@ -80,18 +81,36 @@ impl Image {
         (pixels, width, height, nchannels)
     }
 
+    fn flip_vertically(pixels:Vec<u8>, width:usize, height:usize, nchannels:usize) -> Vec<u8> {
+        let mut flipped_vec = Vec::with_capacity(pixels.len());
+        let w = width*nchannels;
+        let h = height;
+        for i in 0..h {
+            let row_slice = &pixels[(h-i-1)*w..(h-i)*w];
+            flipped_vec.extend_from_slice(row_slice);
+        }
+        flipped_vec
+    }
+
     pub fn decode_from_path(path:&str, format:ImageFormat, flip:bool) -> Image {
         let file_bytes = fs::read(path).unwrap();
 
         let (pixels, width, height, nchannels) = Self::get_data_from_bytes(file_bytes, format);
 
-        
-        let pixels_matrix = Matrix {shape:[width*nchannels, height], array:pixels.clone()};
         let data = if flip {
-            pixels_matrix.flip_vertically()
+            Self::flip_vertically(pixels, width, height, nchannels)
         } else {
-            pixels_matrix
+            pixels
         };
+
+
+        
+        //let pixels_matrix = Matrix {shape:[width*nchannels, height], array:pixels.clone()};
+        //let data = if flip {
+        //    pixels_matrix.flip_vertically()
+        //} else {
+        //    pixels_matrix
+        //};
 
         Image {
             //raw: file_bytes,
@@ -99,7 +118,7 @@ impl Image {
             width:width.try_into().unwrap(),
             height:height.try_into().unwrap(),
             nchannels,
-            data:data.array,
+            data:data,
             format
         }
     }
@@ -107,10 +126,15 @@ impl Image {
     pub fn decode_from_ppm(ppm:PPM, flip:bool) -> Image {
 
         let data = if flip {
-            ppm.data.flip_vertically()
+            Self::flip_vertically(ppm.data, ppm.width, ppm.height, 3)
         } else {
             ppm.data
         };
+        //let data = if flip {
+        //    ppm.data.flip_vertically()
+        //} else {
+        //    ppm.data
+        //};
 
         Image {
             //raw: file_bytes,
@@ -118,7 +142,7 @@ impl Image {
             width:ppm.width.try_into().unwrap(),
             height:ppm.height.try_into().unwrap(),
             nchannels:3,
-            data:data.array,
+            data:data,
             format:ppm.type_.into(),
         }
     }

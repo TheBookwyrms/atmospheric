@@ -11,7 +11,7 @@ use crate::enums::{
 };
 
 use std::ffi::CString;
-use std::os::raw::{self, c_void};
+use std::os::raw::c_void;
 
 
 
@@ -243,29 +243,25 @@ pub fn buffer_data(
 
 }
 
-pub fn set_vertex_attrib_position_3(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
+pub fn set_vertex_attrib_vec3(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32, frequency:UpdateVertexAttrib) {
     set_vertex_attrib(opengl, loc, 3, len, offset, dtype_size);
-    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
+    set_vertex_attrib_divisor(opengl, loc, frequency);
 }
 
-pub fn set_vertex_attrib_normal_3(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
-    set_vertex_attrib(opengl, loc, 3, len, offset, dtype_size);
-    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
+pub fn set_vertex_attrib_vec4(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32, frequency:UpdateVertexAttrib) {
+    set_vertex_attrib(opengl, loc, 4, len, offset, dtype_size);
+    set_vertex_attrib_divisor(opengl, loc, frequency);
 }
 
-pub fn set_vertex_attrib_colour_3(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
-    set_vertex_attrib(opengl, loc, 3, len, offset, dtype_size);
-    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
-}
 
-pub fn set_vertex_attrib_alpha_1(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
+pub fn set_vertex_attrib_vec1(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32, frequency:UpdateVertexAttrib) {
     set_vertex_attrib(opengl, loc, 1, len, offset, dtype_size);
-    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
+    set_vertex_attrib_divisor(opengl, loc, frequency);
 }
 
-pub fn set_vertex_attrib_texture_2(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32) {
+pub fn set_vertex_attrib_vec2(opengl:&Gl, loc:u32, len:i32, offset:i32, dtype_size:i32, frequency:UpdateVertexAttrib) {
     set_vertex_attrib(opengl, loc, 2, len, offset, dtype_size);
-    set_vertex_attrib_divisor(opengl, loc, UpdateVertexAttrib::PerVertex);
+    set_vertex_attrib_divisor(opengl, loc, frequency);
 }
 
 pub fn set_vertex_attrib_mat4(opengl:&Gl, initial_loc:u32, dtype_size:i32, frequency:UpdateVertexAttrib) {

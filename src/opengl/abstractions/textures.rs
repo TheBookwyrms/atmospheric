@@ -11,7 +11,7 @@ use crate::opengl::intermediate_opengl;
 use crate::opengl::abstractions::Programs;
 
 //use numeracy::matrices::Matrix;
-use numeracy::matrices2::Matrix;
+use numeracy::matrices::Matrix;
 
 
 fn opengl_texture_to_index(tex:OpenglTexture) -> usize {

@@ -2,30 +2,46 @@
 use crate::lighting::LightCounter;
 use crate::opengl::gl::Gl;
 use crate::enums::{
-    DataFormat, DrawCall, DrawMode, GlError, LightSourceForm, ProgramSelect, ShaderType, UniformType
+    DataFormat, DrawCall, DrawMode, GlError, LightSourceForm, ShaderType, UniformType
 };
 use crate::opengl::intermediate_opengl;
 
-use crate::opengl::abstractions::{WithVao, WithVbo};
+use crate::opengl::abstractions::{WithVao, WithVbo, programs};
 //use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};
 
 //use numeracy::matrices::Matrix;
 use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
 
+
+#[cfg(target_os = "linux")]
+include!(concat!(env!("OUT_DIR"), "/shaders_glsl.rs"));
+#[cfg(target_os = "linux")]
+include!(concat!(env!("OUT_DIR"), "/programs.rs"));
+
+
+#[cfg(target_os = "windows")]
 include!(concat!(env!("OUT_DIR"), "\\shaders_glsl.rs"));
+#[cfg(target_os = "windows")]
+include!(concat!(env!("OUT_DIR"), "\\programs.rs"));
 
 
-
-#[derive(Clone, Copy)]
-pub struct Programs {
-    pub simple_orthographic_shader:u32,
-    pub blinn_phone_orthographic_shader:u32,
-    pub simple_texture_shader:u32,
-    pub phong_texture_shader:u32,
-    pub current_program:Option<u32>,
-    pub current_program_type:Option<ProgramSelect>,
+impl ProgramSelect {
+    pub fn check_data_format(&self, data_format:DataFormat) -> Result<(), GlError> {
+        match self {
+            Self::SelectSimpleOrthographic => if data_format == DataFormat::Position3Colour3Alpha1 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            Self::SelectPhongOrthographic => if data_format == DataFormat::Position3Colour3Alpha1Normal3 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            Self::SelectSimpleTexture => if data_format == DataFormat::Position3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            Self::SelectPhongTexture => if data_format == DataFormat::Position3Colour3Alpha1Normal3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            //Self::SelectInstancingPhongTexture => Err(GlError::InvalidDataFormat),
+            //Self::SelectInstancingFull => if matches!(data_format, DataFormat::Position3Colour4Normal3Texture2Material4TranformationMat4 { .. }) { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            Self::SelectInstancingBlinnPhong => if matches!(data_format, DataFormat::Position3Colour4Normal3Texture2Material4TranformationMat4 { .. }) { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            //Self::SelectInstancingFull => if data_format == DataFormat::Position3Colour4Normal3Texture2Material4TranformationMat4([UpdateVertexAttrib; 3]) { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            Self::Custom(_u32) => Ok(()),
+        }
+    }
 }
+
 impl Programs {
 
     pub fn compile_program_from_text(opengl:&Gl, vertex_text:&str, fragment_text:&str) -> Result<u32, GlError> {
@@ -40,100 +56,42 @@ impl Programs {
         Ok(program_id)
     }
 
-    pub fn compile_program_from_select(opengl:&Gl, program_type:ProgramSelect, max_lights:&LightCounter) -> Result<u32, GlError> {
-        
-        let dir_max   = max_lights.get_light_count(LightSourceForm::Directional);
-        let point_max = max_lights.get_light_count(LightSourceForm::Point);
-        let spot_max  = max_lights.get_light_count(LightSourceForm::Spot);
 
-        match program_type {
-            ProgramSelect::SelectBlinnPhongOrthographic => {
-                let vertex_text   = BLINN_PHONG_ORTHOGRAPHIC_VERTEX;
-                let fragment_text = BLINN_PHONG_ORTHOGRAPHIC_FRAGMENT
-                .replace("find_and_replace_with_max_number_of_point_lights", &point_max.to_string())
-                .replace("find_and_replace_with_max_number_of_directional_lights", &dir_max.to_string())
-                .replace("find_and_replace_with_max_number_of_spot_lights", &spot_max.to_string());
-                let shader_id = Programs::compile_program_from_text(
-                    opengl, vertex_text, &fragment_text
-                )?;
-                Ok(shader_id)
-            },
-            ProgramSelect::SelectSimpleOrthographic => {
-                let vertex_text   = SIMPLE_ORTHOGRAPHIC_VERTEX;
-                let fragment_text = SIMPLE_ORTHOGRAPHIC_FRAGMENT;
-                let shader_id = Programs::compile_program_from_text(
-                    opengl, vertex_text, fragment_text
-                )?;
-                Ok(shader_id)
-            },
-            ProgramSelect::SelectSimpleTexture => {
-                let vertex_text   = SIMPLE_TEXTURE_VERTEX;
-                let fragment_text = SIMPLE_TEXTURE_FRAGMENT;
-                let shader_id = Programs::compile_program_from_text(
-                    opengl, vertex_text, fragment_text
-                )?;
-                Ok(shader_id)
-            },
-            ProgramSelect::SelectPhongTexture => {
-                let vertex_text   = PHONG_TEXTURE_VERTEX;
-                let fragment_text = PHONG_TEXTURE_FRAGMENT
-                .replace("find_and_replace_with_max_number_of_point_lights", &point_max.to_string())
-                .replace("find_and_replace_with_max_number_of_directional_lights", &dir_max.to_string())
-                .replace("find_and_replace_with_max_number_of_spot_lights", &spot_max.to_string());
-                let shader_id = Programs::compile_program_from_text(
-                    opengl, vertex_text, &fragment_text
-                )?;
-                Ok(shader_id)
-            },
-            ProgramSelect::Custom(_) => Err(GlError::InvalidCustomProgramSelect)
-        }
-    }
 
-    pub fn compile(opengl:&Gl, max_lights:&LightCounter) -> Result<Programs, GlError> {
-        let simple_orthographic_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectSimpleOrthographic, max_lights)?;
-        let blinn_phone_orthographic_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectBlinnPhongOrthographic, max_lights)?;
-        let simple_texture_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectSimpleTexture, max_lights)?;
-        let phong_texture_shader = Programs::compile_program_from_select(opengl, ProgramSelect::SelectPhongTexture, max_lights)?;
-
-        Ok(Programs { simple_orthographic_shader, blinn_phone_orthographic_shader,
-                      simple_texture_shader, phong_texture_shader,
-                      current_program:None, current_program_type:None })
-    }
-
-    pub fn use_program(&mut self, opengl:&Gl, program:ProgramSelect) -> Result<(), GlError> {
-        match program {
-            ProgramSelect::SelectSimpleOrthographic => {
-                intermediate_opengl::use_program(opengl, self.simple_orthographic_shader)?;
-                self.current_program = Some(self.simple_orthographic_shader);
-                self.current_program_type = Some(program);
-                Ok(())
-            },
-            ProgramSelect::SelectBlinnPhongOrthographic => {
-                intermediate_opengl::use_program(opengl, self.blinn_phone_orthographic_shader)?;
-                self.current_program = Some(self.blinn_phone_orthographic_shader);
-                self.current_program_type = Some(program);
-                Ok(())
-            },
-            ProgramSelect::SelectSimpleTexture => {
-                intermediate_opengl::use_program(opengl, self.simple_texture_shader)?;
-                self.current_program = Some(self.simple_texture_shader);
-                self.current_program_type = Some(program);
-                Ok(())
-            },
-            ProgramSelect::SelectPhongTexture => {
-                intermediate_opengl::use_program(opengl, self.phong_texture_shader)?;
-                self.current_program = Some(self.phong_texture_shader);
-                self.current_program_type = Some(program);
-                Ok(())
-            },
-            ProgramSelect::Custom(id) => {
-                intermediate_opengl::use_program(opengl, id)?;
-                self.current_program = Some(id);
-                self.current_program_type = Some(program);
-                Ok(())
-            }
-        }
-    }
+//    pub fn use_program(&mut self, opengl:&Gl, program:ProgramSelect) -> Result<(), GlError> {
+//        match program {
+//            ProgramSelect::SelectSimpleOrthographic => {
+//                intermediate_opengl::use_program(opengl, self.simple_orthographic_shader)?;
+//                self.current_program = Some(self.simple_orthographic_shader);
+//                self.current_program_type = Some(program);
+//                Ok(())
+//            },
+//            ProgramSelect::SelectPhongOrthographic => {
+//                intermediate_opengl::use_program(opengl, self.blinn_phong_orthographic_shader)?;
+//                self.current_program = Some(self.blinn_phong_orthographic_shader);
+//                self.current_program_type = Some(program);
+//                Ok(())
+//            },
+//            ProgramSelect::SelectSimpleTexture => {
+//                intermediate_opengl::use_program(opengl, self.simple_texture_shader)?;
+//                self.current_program = Some(self.simple_texture_shader);
+//                self.current_program_type = Some(program);
+//                Ok(())
+//            },
+//            ProgramSelect::SelectPhongTexture => {
+//                intermediate_opengl::use_program(opengl, self.phong_texture_shader)?;
+//                self.current_program = Some(self.phong_texture_shader);
+//                self.current_program_type = Some(program);
+//                Ok(())
+//            },
+//            ProgramSelect::Custom(id) => {
+//                intermediate_opengl::use_program(opengl, id)?;
+//                self.current_program = Some(id);
+//                self.current_program_type = Some(program);
+//                Ok(())
+//            }
+//        }
+//    }
 
     pub fn disuse_program(&mut self, opengl:&Gl) {
         intermediate_opengl::disuse_program(opengl);
@@ -156,71 +114,28 @@ impl Programs {
     ) -> Result<(), GlError> {
 
         if let Some(program) = self.current_program_type {
-            match program {
-                ProgramSelect::SelectSimpleOrthographic => {
-                    if format == DataFormat::Position3Colour3Alpha1 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
-                },
-                ProgramSelect::SelectBlinnPhongOrthographic => {
-                    if format == DataFormat::Position3Colour3Alpha1Normal3 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
-                },
-                ProgramSelect::SelectSimpleTexture => {
-                    if format == DataFormat::Position3Texture2 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
-                },
-                ProgramSelect::SelectPhongTexture => {
-                    if format == DataFormat::Position3Colour3Alpha1Normal3Texture2 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
-                },
-                ProgramSelect::Custom(_) => Ok(())?
-            }
+            program.check_data_format(format)?
+            //match program {
+            //    ProgramSelect::SelectSimpleOrthographic => {
+            //        if format == DataFormat::Position3Colour3Alpha1 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
+            //    },
+            //    ProgramSelect::SelectBlinnPhongOrthographic => {
+            //        if format == DataFormat::Position3Colour3Alpha1Normal3 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
+            //    },
+            //    ProgramSelect::SelectSimpleTexture => {
+            //        if format == DataFormat::Position3Texture2 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
+            //    },
+            //    ProgramSelect::SelectPhongTexture => {
+            //        if format == DataFormat::Position3Colour3Alpha1Normal3Texture2 { Ok(())? } else { Err(GlError::InvalidDataFormat)? }
+            //    },
+            //    ProgramSelect::Custom(_) => Ok(())?
+            //}
         } else {
             Err(GlError::InvalidProgramType)?
         }
 
-
-        //if format == DataFormat::Position3Texture2 {
-        //    raw_opengl::bind_texture(opengl, gl::TEXTURE_2D, texture);
-        //}
-
         Ok(objects.draw(mode, data))
-        //let with_vao = WithObject::existing(opengl, Object::VAO, vao, format);
-        //Ok(with_vao.draw(call, mode, data)?)
 
     }
 
-    //pub fn draw<T:Clone, U:ShapeTrait<2>>(
-    //    &self, objects:WithObject, call:DrawCall,
-    //    mode:DrawMode, data:&Matrix<T, 2, U>,
-    //) -> Result<(), GlError> {
-//
-    //    let format = objects.get_data_format();
-//
-    //    match self.current_program_type {
-    //        None => Err(GlError::InvalidProgramType),
-    //        Some(program) => {
-    //            match program {
-    //                ProgramSelect::SelectSimpleOrthographic => {
-    //                    if format == DataFormat::Position3Colour3Alpha1 { Ok(()) } else { Err(GlError::InvalidDataFormat) }
-    //                },
-    //                ProgramSelect::SelectBlinnPhongOrthographic => {
-    //                    if format == DataFormat::Position3Colour3Alpha1Normal3 { Ok(()) } else { Err(GlError::InvalidDataFormat) }
-    //                },
-    //                ProgramSelect::SelectSimpleTexture => {
-    //                    if format == DataFormat::Position3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) }
-    //                },
-    //                ProgramSelect::SelectPhongTexture => {
-    //                    if format == DataFormat::Position3Colour3Alpha1Normal3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) }
-    //                },
-    //                ProgramSelect::Custom(_) => Ok(())
-    //            }
-    //        },
-    //    }?;
-//
-    //    //if format == DataFormat::Position3Texture2 {
-    //    //    raw_opengl::bind_texture(opengl, gl::TEXTURE_2D, texture);
-    //    //}
-//
-    //    Ok(objects.draw(call, mode, data)?)
-    //    //let with_vao = WithObject::existing(opengl, Object::VAO, vao, format);
-    //    //Ok(with_vao.draw(call, mode, data)?)
-//
-    //}
 }

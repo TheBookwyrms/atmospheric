@@ -65,15 +65,6 @@ pub enum ShaderType {
     ShaderProgram,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum ProgramSelect {
-    SelectBlinnPhongOrthographic,
-    SelectSimpleOrthographic,
-    SelectSimpleTexture,
-    SelectPhongTexture,
-    Custom(u32)
-}
-
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum BufferObject {
     VertexBufferObject,

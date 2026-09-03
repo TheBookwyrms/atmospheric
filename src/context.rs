@@ -3,12 +3,13 @@ use std::time::{Duration, Instant};
 use crate::camera;
 use crate::config::RenderInitialConfig;
 use crate::enums::{
-    BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, ProgramSelect, UniformType
+    BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, UniformType
 };
 use crate::lighting::LightingGenerator;
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
-use crate::opengl::abstractions::{Programs, Textures, Uniform, WithVao, WithVbo, WithEbo, WithVaoVbo, WithVaoEbo};
+use crate::opengl::abstractions::{Programs, ProgramSelect, Textures, Uniform, WithVao, WithVbo, WithEbo, WithVaoVbo, WithVaoEbo};
+
 //use numeracy::matrices::Matrix;
 use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
@@ -37,7 +38,7 @@ impl<'a> Context<'a> {
         //let camera = Camera::new(CameraMode::Encompassing);
 
         //panic!("add info for number of lights by passing it through config");
-        let programs = Programs::compile(&window.opengl, &config.max_lights)?;
+        let programs = Programs::compile_all(&window.opengl, &config.max_lights)?;
         let textures = Textures::new_empty();
 
         let lighting_generator = LightingGenerator::init(&config.max_lights);
@@ -167,7 +168,7 @@ impl<'a> Context<'a> {
             ProgramSelect::SelectSimpleOrthographic => {
                 self.set_orthographic_camera_uniforms()?;
             },
-            ProgramSelect::SelectBlinnPhongOrthographic => {
+            ProgramSelect::SelectPhongOrthographic => {
                 self.set_orthographic_camera_uniforms()?;
                 self.set_blinn_phong_uniforms()?;
             },
@@ -175,6 +176,18 @@ impl<'a> Context<'a> {
                 self.set_orthographic_camera_uniforms()?;
                 self.set_blinn_phong_uniforms()?;
             },
+            ProgramSelect::SelectInstancingBlinnPhong => {
+                self.set_orthographic_camera_uniforms()?;
+                self.set_blinn_phong_uniforms()?;
+            },
+            //ProgramSelect::SelectInstancingPhongTexture => {
+            //    self.set_orthographic_camera_uniforms()?;
+            //    self.set_blinn_phong_uniforms()?;
+            //},
+            //ProgramSelect::SelectInstancingFull => {
+            //    self.set_orthographic_camera_uniforms()?;
+            //    self.set_blinn_phong_uniforms()?;
+            //},
             ProgramSelect::SelectSimpleTexture => {
                 self.set_orthographic_camera_uniforms()?;
             },

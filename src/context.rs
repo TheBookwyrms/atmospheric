@@ -1,9 +1,9 @@
 use std::time::{Duration, Instant};
 
-use crate::camera;
-use crate::config::RenderInitialConfig;
-use crate::enums::{
-    BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, UniformType
+use crate::opengl_helpers::camera::Camera;
+use crate::opengl_helpers::config::RenderInitialConfig;
+use crate::opengl_helpers::enums::{
+    BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, UniformType, ContextError, CameraVector
 };
 use crate::lighting::LightingGenerator;
 use crate::opengl::intermediate_opengl;
@@ -15,8 +15,6 @@ use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
 use glfw;
 use glfw::{Action, Key};
-use crate::enums::ContextError;
-use crate::{camera::Camera};
 use crate::window::Window;
 
 
@@ -188,7 +186,7 @@ impl<'a> Context<'a> {
             //    self.set_orthographic_camera_uniforms()?;
             //    self.set_blinn_phong_uniforms()?;
             //},
-            ProgramSelect::SelectSimpleTexture => {
+            ProgramSelect::SelectSimpleTexture | ProgramSelect::SelectTwoTexture => {
                 self.set_orthographic_camera_uniforms()?;
             },
             ProgramSelect::Custom(_) => Err(GlError::InvalidCustomProgramSelect)?
@@ -233,7 +231,7 @@ impl<'a> Context<'a> {
             
         self.programs.set_uniform(&self.window.opengl,"camera_viewpos", UniformType::Vec3,
             Matrix::from_vector(
-                self.camera.camera_info_matrix.get_camera(crate::enums::CameraVector::Position)
+                self.camera.camera_info_matrix.get_camera(CameraVector::Position)
             ))?;
 
 

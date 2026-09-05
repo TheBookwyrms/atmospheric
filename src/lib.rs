@@ -1,14 +1,16 @@
 extern crate glfw;
 
 pub mod opengl;
+pub mod opengl_helpers;
 
-pub mod enums;
+//pub mod enums;
 
-pub mod image_processing;
+//pub mod image_processing;
 
-pub mod camera;
+//pub mod camera;
 pub mod lighting;
 pub mod context;
 pub mod window;
-pub mod materials;
-pub mod config;
+//pub mod materials;
+//pub mod config;
+pub mod vao_object;

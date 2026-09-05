@@ -1,6 +1,6 @@
-use crate::config::RenderInitialConfig;
+use crate::opengl_helpers::config::RenderInitialConfig;
 use crate::context::Context;
-use crate::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
+use crate::opengl_helpers::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
 //use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};
 use crate::opengl::abstractions::{WithVao, WithVbo};
 //use numeracy::matrices::Matrix;

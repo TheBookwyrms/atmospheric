@@ -45,6 +45,7 @@ in pkgs.mkShell {
   ];
 
   packages = [
+    pkgs.git
     rust
   ];
 }

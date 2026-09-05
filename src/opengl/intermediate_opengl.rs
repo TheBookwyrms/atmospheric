@@ -1,7 +1,7 @@
 use crate::opengl::gl;
 use crate::opengl::gl::Gl;
 use crate::opengl::raw_opengl;
-use crate::enums::{
+use crate::opengl_helpers::enums::{
     ArrayObject, BlendFunc, BufferBit,
     BufferObject, DrawMode, DrawType,
     GlEnable, GlError, InternalFormat,

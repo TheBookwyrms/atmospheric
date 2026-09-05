@@ -1,7 +1,7 @@
 //use crate::config::RenderInitialConfig;
 use crate::lighting::LightCounter;
 use crate::opengl::gl::Gl;
-use crate::enums::{
+use crate::opengl_helpers::enums::{
     DataFormat, DrawCall, DrawMode, GlError, LightSourceForm, ShaderType, UniformType
 };
 use crate::opengl::intermediate_opengl;
@@ -31,7 +31,7 @@ impl ProgramSelect {
         match self {
             Self::SelectSimpleOrthographic => if data_format == DataFormat::Position3Colour3Alpha1 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
             Self::SelectPhongOrthographic => if data_format == DataFormat::Position3Colour3Alpha1Normal3 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
-            Self::SelectSimpleTexture => if data_format == DataFormat::Position3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
+            Self::SelectSimpleTexture | Self::SelectTwoTexture => if data_format == DataFormat::Position3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
             Self::SelectPhongTexture => if data_format == DataFormat::Position3Colour3Alpha1Normal3Texture2 { Ok(()) } else { Err(GlError::InvalidDataFormat) },
             //Self::SelectInstancingPhongTexture => Err(GlError::InvalidDataFormat),
             //Self::SelectInstancingFull => if matches!(data_format, DataFormat::Position3Colour4Normal3Texture2Material4TranformationMat4 { .. }) { Ok(()) } else { Err(GlError::InvalidDataFormat) },

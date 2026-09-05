@@ -1,5 +1,5 @@
 use crate::opengl::gl::Gl;
-use crate::enums::{
+use crate::opengl_helpers::enums::{
     ArrayObject, BufferObject, DataFormat,
     DrawCall, DrawMode, DrawType,
     GlError, Object, TextureTarget, UpdateVertexAttrib,

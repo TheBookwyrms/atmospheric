@@ -3,7 +3,7 @@ use numeracy::matrices::{Matrix, S2};
 use numeracy::vectors::Vector;
 use numeracy::enums::MatrixError;
 
-use crate::enums::{CameraAxis, CameraMode, CameraVector, ContextError};
+use crate::opengl_helpers::enums::{CameraAxis, CameraMode, CameraVector, ContextError};
 
 
 pub struct CameraInfoMatrix {

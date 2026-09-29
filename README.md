@@ -3,15 +3,15 @@ contains various layers of abstraction for OpenGL, from no abstractions on the r
 TO DO
 - [x] add "Custom" shader program option, in addition to pre-written ones
 - [ ] write documentation
-- [ ] write examples for all levels of abstraction
-- [ ] object structs
+- [x] object structs
 - [x] fix blinn-phong lighting
-    - [ ] figure out multi-light scenes for N lights
+    - [x] figure out multi-light scenes for N lights
     - [ ] implement the normal matrix for blinn-phong lighting (and just in general)
 - [ ] ppm viewer (as textures?)
     - [x] use PPM struct for ppm image textures
 - [ ] render to textures
-- [ ] save renders as image (from textures?)
+- [x] save renders as image
+    - [ ] from textures
 - [ ] gui stuff
 - [ ] convolution kernel postprocessing
 - [x] fix camera viewing position at correct point, without seeing behind camera
@@ -20,7 +20,7 @@ TO DO
     - [x] add camera enums for ease of use
 - [ ] text rendering
 - [ ] add Module system to allow for pre-packaged settings such as Shaders, Camera pre-sets, and others
+    - [ ] move glfw window keybindings into individual functions (modules)
 - [x] test out whether multiple shader programs can be used sequentially without overriding each other
     - [ ] can i use multiple shader calls, at multiple (concurrent or different) positions, and see all of the results simultaneously, without conflicts
-- [ ] save an image from a window as either PNG or JPEG
 - [ ] migrate things from rendering_stuff_rs to atmospheric

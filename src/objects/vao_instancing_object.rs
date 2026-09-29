@@ -1,12 +1,13 @@
-use crate::opengl_helpers::image_processing::Image;
-use crate::opengl_helpers::materials::Material;
+use crate::image_processing::Image;
+use crate::materials::Material;
 use numeracy::matrices::{Matrix, S1, S2, S3,};
 
 
-use crate::opengl_helpers::enums::{
+use crate::enums::{
     ContextError, DataFormat, DrawMode,
     DrawType, AttributeLoc::At,
     OpenglTexture, UpdateVertexAttrib::{PerInstance, PerVertex},
+    ObjectColour, ObjectMaterials, ObjectTexture
 };
 use crate::opengl::abstractions::{PreparedTexture, Programs, TextureSetup, Textures, WithVao, WithVbo};
 use crate::opengl::gl::Gl;
@@ -21,60 +22,43 @@ include!(concat!(env!("OUT_DIR"), "\\compiled_assets.rs"));
 
 static MAT_ONES_LAZYLOCK:LazyLock<Matrix<f32, 2, S2<4, 1>>> = LazyLock::new(|| Matrix::from_2darray([[1.; 4]]));
 
-
-pub enum ObjectColour<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
-   None,
-   Constant( Matrix<f32, 2, S2<4, 1>>),
-   ConstantPerInstance([Matrix<f32, 2, S2<4, 1>>;NUM_INSTANCES]),
-   PerVertex(Matrix<f32, 2, S2<4, NUM_VERTICES>>),
-}
-
-pub enum ObjectTexture<const NUM_VERTICES:usize> {
-   None,
-   PerVertex(Image, Image, Matrix<f32, 2, S2<2, NUM_VERTICES>>),
-}
-
-pub enum ObjectMaterials<const NUM_VERTICES:usize> {
-   None,
-   Constant( Material),
-   PerVertex(Matrix<Material, 1, S1<NUM_VERTICES>>),
-}
  
  
- pub struct ObjectForVaoDraws<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
-    position_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
-    normals_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+ pub struct InstancingObject<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
+    position_matrix:&'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+    _normals_matrix:&'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
     
-    colour_matrix:ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
+    _colour_matrix:ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
     //texture_coords_matrix:ObjectTextureCoords<NUM_VERTICES>,
-    materials_matrix:ObjectMaterials<NUM_VERTICES>,
+    _materials_matrix:ObjectMaterials<NUM_VERTICES>,
 
     /// vec of mat4, length N, for position and normals
     //transformation_matrices:Vec<Matrix<f32, 2, S2<4, 4>>>,
     transformation_matrices:[Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
+    prior_transformation_matrices:[Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
     
     object_vao:u32,
-    position_matrix_vbo:u32,
-    colour_matrix_vbo:u32,
-    texture_matrix_vbo:u32,
-    normals_matrix_vbo:u32,
-    materials_matrix_vbo:u32,
+    _position_matrix_vbo:u32,
+    _colour_matrix_vbo:u32,
+    _texture_matrix_vbo:u32,
+    _normals_matrix_vbo:u32,
+    _materials_matrix_vbo:u32,
     transformation_matrices_vbo:u32,
 
     diffuse_texture:PreparedTexture,
     specular_texture:PreparedTexture,
  }
  
-impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> ObjectForVaoDraws<NUM_INSTANCES, NUM_VERTICES> {
+impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<'a, NUM_INSTANCES, NUM_VERTICES> {
 
     pub fn new(
-        opengl:&Gl,
-        positions:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
-        normals:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
-        colour:ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
-        materials:ObjectMaterials<NUM_VERTICES>,
-        texture:ObjectTexture<NUM_VERTICES>,
-        transformations:[Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
+        opengl          : &Gl,
+        positions       : &'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+        normals         : &'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+        colour          : ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
+        materials       : ObjectMaterials<NUM_VERTICES>,
+        texture         : ObjectTexture<NUM_VERTICES>,
+        transformations : [Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
      ) -> Self {
  
 
@@ -195,18 +179,19 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> ObjectForVaoDraws<NUM_
  
         Self {
             position_matrix: positions,
-            colour_matrix: colour,
+            _colour_matrix: colour,
             //texture_coords_matrix: texture_coords,
-            normals_matrix: normals,
-            materials_matrix: materials,
-            transformation_matrices: transformations,
+            _normals_matrix: normals,
+            _materials_matrix: materials,
+            transformation_matrices: transformations.clone(),
+            prior_transformation_matrices: transformations,
  
             object_vao: with_object_vao.get_vao(),
-            position_matrix_vbo: with_positions_vbo.get_vbo(),
-            colour_matrix_vbo: with_colours_vbo.get_vbo(),
-            texture_matrix_vbo: with_texture_coords_vbo.get_vbo(),
-            normals_matrix_vbo: with_normals_vbo.get_vbo(),
-            materials_matrix_vbo: with_materials_vbo.get_vbo(),
+            _position_matrix_vbo: with_positions_vbo.get_vbo(),
+            _colour_matrix_vbo: with_colours_vbo.get_vbo(),
+            _texture_matrix_vbo: with_texture_coords_vbo.get_vbo(),
+            _normals_matrix_vbo: with_normals_vbo.get_vbo(),
+            _materials_matrix_vbo: with_materials_vbo.get_vbo(),
             transformation_matrices_vbo: with_transformations_vbo.get_vbo(),
  
             diffuse_texture,
@@ -214,7 +199,7 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> ObjectForVaoDraws<NUM_
          }
     }
     
-    pub fn draw<'a>(&'a self, opengl:&Gl, textures:&mut Textures<'a>, programs:&Programs) -> Result<(), ContextError> {
+    pub fn draw(&'a self, opengl:&Gl, textures:&mut Textures<'a>, programs:&Programs) -> Result<(), ContextError> {
 
         textures.activate(
             opengl, OpenglTexture::Texture0, &self.diffuse_texture, programs
@@ -223,7 +208,22 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> ObjectForVaoDraws<NUM_
             opengl, OpenglTexture::Texture1, &self.specular_texture, programs
         )?;
 
+
         let with_vao = WithVao::existing(opengl, self.object_vao);
+        let with_transformations_vbo = WithVbo::existing(opengl, self.transformation_matrices_vbo);
+
+
+        if self.transformation_matrices != self.prior_transformation_matrices {
+            let mut arrs = Vec::with_capacity(NUM_INSTANCES);
+            self.transformation_matrices.iter().for_each(|m| arrs.push(m.get_view_of_array()));
+            let transformation_data = Matrix::from_vec_with_shape(
+                arrs.concat(),
+                S3::<4, 4, NUM_INSTANCES>
+            );
+
+            with_transformations_vbo.buffer_sub_data(&transformation_data);
+        }
+
         with_vao.draw_instanced(DrawMode::GlTriangles, &self.position_matrix, self.transformation_matrices.len().try_into().unwrap());
     
         Ok(())

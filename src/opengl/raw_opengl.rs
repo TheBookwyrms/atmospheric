@@ -1,4 +1,4 @@
-use crate::opengl::gl;
+use crate::opengl::{gl, raw_opengl};
 use crate::opengl::gl::Gl;
 
 use std::os::raw::c_void;
@@ -222,4 +222,12 @@ pub fn tex_parameter_fv(opengl:&Gl, target: u32, pname: u32, params: *const f32)
 
 pub fn generate_mipmap(opengl:&Gl, target: u32) {
     unsafe { opengl.GenerateMipmap(target) }
+}
+
+pub fn read_pixels(opengl:&Gl, x:i32, y:i32, width: i32, height:i32, colour_format:u32, pixels:*mut c_void) {
+    unsafe { opengl.ReadPixels(x, y, width, height, colour_format, gl::UNSIGNED_BYTE, pixels) }
+}
+
+pub fn pixel_store_i(opengl:&Gl, pname:u32, param:i32) {
+    unsafe { opengl.PixelStorei(pname, param) }
 }

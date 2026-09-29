@@ -1,6 +1,6 @@
-use crate::opengl_helpers::enums::{BlendFunc, BufferBit, GlEnable, GlError, ContextError};
+use crate::enums::{BlendFunc, BufferBit, ContextError, GlEnable, GlError, InternalFormat};
 use crate::opengl::gl::Gl;
-use crate::opengl;
+use crate::opengl::{self, intermediate_opengl};
 
 use glfw::Glfw;
 use glfw::{Context, WindowEvent};
@@ -57,6 +57,8 @@ impl Window {
     pub fn make_current(&mut self) { self.window.make_current(); }
     pub fn width(&self) -> i32 { self.window.get_size().0 }
     pub fn height(&self) -> i32 { self.window.get_size().1 }
+    /// gets (width, height) of window, converted to usize
+    pub fn wh_usize(&self) -> (usize, usize) { let wh = self.window.get_size(); (wh.0 as usize, wh.1 as usize) }
 
     pub fn clear(&self, masks:Vec<BufferBit>) { opengl::intermediate_opengl::clear(&self.opengl, masks) }
     pub fn clear_to_colour(&self, rgb:(f32, f32, f32), a:f32) -> Result<(), GlError> {
@@ -68,6 +70,10 @@ impl Window {
         opengl::intermediate_opengl::gl_enable(&self.opengl, GlEnable::Multisample);
         opengl::intermediate_opengl::gl_enable(&self.opengl, GlEnable::Blend);
         opengl::intermediate_opengl::gl_blendfunc(&self.opengl, BlendFunc::SRCAlphaOneMinusSRCAlpha);
+    }
+
+    pub fn read_pixels_full_window(&self, opengl:&Gl, colour_format:InternalFormat) -> Vec<u8> {
+        intermediate_opengl::read_pixels(opengl, 0, 0, self.width(), self.height(), colour_format)
     }
 }
 

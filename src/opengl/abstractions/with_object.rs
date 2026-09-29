@@ -1,5 +1,5 @@
 use crate::opengl::gl::Gl;
-use crate::opengl_helpers::enums::{
+use crate::enums::{
     ArrayObject, BufferObject, DataFormat,
     DrawCall, DrawMode, DrawType,
     GlError, Object, TextureTarget, UpdateVertexAttrib,
@@ -146,7 +146,7 @@ impl WithVbo<'_> {
         WithVbo { opengl, vbo:id }
     }
 
-    pub fn buffer_data<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<T, N, U>, draw_type:DrawType) {
+    pub fn buffer_data<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, draw_type:DrawType) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
         intermediate_opengl::buffer_data(
@@ -156,7 +156,7 @@ impl WithVbo<'_> {
         )
     }
 
-    pub fn buffer_sub_data<U:ShapeTrait<2>>(&self, data:&Matrix<f32, 2, U>) {
+    pub fn buffer_sub_data<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
 

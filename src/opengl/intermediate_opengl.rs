@@ -1,7 +1,7 @@
 use crate::opengl::gl;
 use crate::opengl::gl::Gl;
 use crate::opengl::raw_opengl;
-use crate::opengl_helpers::enums::{
+use crate::enums::{
     ArrayObject, BlendFunc, BufferBit,
     BufferObject, DrawMode, DrawType,
     GlEnable, GlError, InternalFormat,
@@ -10,8 +10,10 @@ use crate::opengl_helpers::enums::{
     TextureWrap, TextureWrapping, UniformType, UpdateVertexAttrib,
 };
 
+use core::prelude::v1;
 use std::ffi::CString;
 use std::os::raw::c_void;
+use std::slice;
 
 
 
@@ -132,10 +134,10 @@ pub fn set_uniform<T:Clone>(opengl:&Gl, program_id:u32,
                     value:*const T) -> Result<(), GlError> {
     let location_name = get_uniform_location(opengl, program_id, uniform_name)?;
     match uniform_type {
-        UniformType::Int => raw_opengl::set_uniform_int(opengl, location_name, value as *const i32),
-        UniformType::Float => raw_opengl::set_uniform_float(opengl, location_name, value as *const f32),
-        UniformType::Vec3  => raw_opengl::set_uniform_vec3(opengl, location_name, value as *const f32),
-        UniformType::Mat4  => raw_opengl::set_uniform_mat4(opengl, location_name, value as *const f32),
+        UniformType::Int   => raw_opengl::set_uniform_int(  opengl, location_name,      value as *const i32),
+        UniformType::Float => raw_opengl::set_uniform_float(opengl, location_name,    value as *const f32),
+        UniformType::Vec3  => raw_opengl::set_uniform_vec3( opengl, location_name, value as *const f32),
+        UniformType::Mat4  => raw_opengl::set_uniform_mat4( opengl, location_name, value as *const f32),
     }
     Ok(())
 }
@@ -482,67 +484,22 @@ pub fn generate_mipmap(opengl:&Gl, texture:TextureTarget) {
     }
 }
 
-
-
-
-pub fn texture_test_1(opengl:&Gl, width:*mut i32, height:*mut i32, pixels: *const u8) -> u32 {
-
-    //let tex_id = raw_opengl::gen_textures(opengl);
-    let tex_id = generate(opengl, Object::Texture2D);
-    //raw_opengl::active_texture(opengl, gl::TEXTURE0);
-    bind_texture(opengl, TextureTarget::Texture2D, tex_id);
-    //raw_opengl::bind_texture(opengl, gl::TEXTURE_2D, tex_id);
-
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::MIRRORED_REPEAT.try_into().unwrap());
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::MIRRORED_REPEAT.try_into().unwrap());
-    
-    texture_image(
-        opengl, TextureTarget::Texture2D, 0,
-        InternalFormat::RGBA, width as i32, height as i32, pixels);
-    generate_mipmap(opengl, TextureTarget::Texture2D);
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT.try_into().unwrap());
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT.try_into().unwrap());
-    
-    //texture_wrap(opengl, TextureTarget::Texture2D, TextureWrap::S, TextureWrapping::MirroredRepeat);
-    texture_wrap(opengl, TextureTarget::Texture2D, TextureWrap::S, TextureWrapping::ClampToBorder(1.0, 1.0, 1.0, 1.0));
-    texture_wrap(opengl, TextureTarget::Texture2D, TextureWrap::T, TextureWrapping::ClampToEdge);
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE.try_into().unwrap());
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE.try_into().unwrap());
-
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_BORDER.try_into().unwrap());
-    //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_BORDER.try_into().unwrap());
-    //raw_opengl::tex_parameter_fv(opengl, gl::TEXTURE_2D, gl::TEXTURE_BORDER_COLOR, vec![1.0, 1.0, 1.0, 1.0].as_ptr());
-
-
-
-    texture_min_filter(opengl, TextureTarget::Texture2D, TextureMinFilter::LinearMipmapNearest);
-    texture_mag_filter(opengl, TextureTarget::Texture2D, TextureMagFilter::Linear);
-
-
-    // texture_filter(opengl, TextureTarget::Texture2D, TextureFilter::MinFilter(TextureMinFilter::LinearMipmapNearest));
-    // //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_NEAREST.try_into().unwrap());
-    // //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR.try_into().unwrap());
-    // //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST.try_into().unwrap());
-    // texture_filter(opengl, TextureTarget::Texture2D, TextureFilter::MagFilter(TextureMagFilter::Linear));
-    // //raw_opengl::tex_parameter_i(opengl, gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR.try_into().unwrap());
-    
-    //raw_opengl::tex_image_2d(
-    //    opengl, gl::TEXTURE_2D, 0,
-    //    gl::RGB.try_into().unwrap(), width as i32, height as i32,
-    //    gl::RGB, gl::UNSIGNED_BYTE, pixels as *const c_void);
-
-    //texture_image(
-    //    opengl, TextureTarget::Texture2D, 0,
-    //    InternalFormat::RGBA, width as i32, height as i32, pixels);
-    //generate_mipmap(opengl, TextureTarget::Texture2D);
-
-    //raw_opengl::tex_image_2d(
-    //    opengl, gl::TEXTURE_2D, 0,
-    //    gl::RGBA.try_into().unwrap(), width as i32, height as i32,
-    //    gl::RGBA, gl::UNSIGNED_BYTE, pixels as *const c_void);
-
-    //generate_mipmap(opengl, TextureTarget::Texture2D);
-    //raw_opengl::generate_mipmap(opengl, gl::TEXTURE_2D);
-
-    tex_id
+pub fn read_pixels(opengl:&Gl, x:i32, y:i32, width:i32, height:i32, colour_format:InternalFormat) -> Vec<u8> {
+    raw_opengl::pixel_store_i(opengl, gl::PACK_ALIGNMENT, 1);
+    match colour_format {
+        InternalFormat::RGB  => {
+            let data_vec = Vec::<u8>::with_capacity((width*height*3) as usize);
+            let ptr = data_vec.as_ptr() as *mut c_void;
+            raw_opengl::read_pixels(opengl, x, y, width, height,  gl::RGB, ptr);
+            let pixels = unsafe { slice::from_raw_parts(ptr as *mut u8, (width*height*3) as usize) }.to_vec();
+            pixels
+        },
+        InternalFormat::RGBA => {
+            let data_vec = Vec::<u8>::with_capacity((width*height*4) as usize);
+            let ptr = data_vec.as_ptr() as *mut c_void;
+            raw_opengl::read_pixels(opengl, x, y, width, height, gl::RGBA, ptr);
+            let pixels = unsafe { slice::from_raw_parts(ptr as *mut u8, (width*height*4) as usize) }.to_vec();
+            pixels
+        },
+    }
 }

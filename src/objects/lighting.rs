@@ -1,6 +1,6 @@
-use crate::opengl_helpers::config::RenderInitialConfig;
+use crate::config::RenderInitialConfig;
 use crate::context::Context;
-use crate::opengl_helpers::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
+use crate::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
 //use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};
 use crate::opengl::abstractions::{WithVao, WithVbo};
 //use numeracy::matrices::Matrix;
@@ -64,6 +64,7 @@ impl LightingGenerator{
             num_lights_made:LightCounter::new_empty(),
         }
     }
+    
     pub fn get_next_light_idx_if_valid(&self, light:LightSourceForm) -> Result<u16, ContextError> {
         if self.num_lights_made.get_light_count(light) < self.max_lights.get_light_count(light) {
             let next_light_idx = self.num_lights_made.get_light_count(light);
@@ -71,38 +72,12 @@ impl LightingGenerator{
         } else {
             match light {
                 LightSourceForm::Directional => Err(ContextError::MaxDirectionalLightsGenerated),
-                LightSourceForm::Point => Err(ContextError::MaxPointLightsGenerated),
-                LightSourceForm::Spot => Err(ContextError::MaxSpotLightsGenerated),
+                LightSourceForm::Point       => Err(ContextError::MaxPointLightsGenerated),
+                LightSourceForm::Spot        => Err(ContextError::MaxSpotLightsGenerated),
             }
-            //Err(ContextError::MaxDirectionalLightsGenerated)
         }
-        //match light {
-        //    LightSourceForm::Directional => {
-        //        if self.num_lights_made.get_light_count(light) < self.max_lights.get_light_count(light) {
-        //            let next_directional_idx = self.num_lights_made.get_light_count(light);
-        //            Ok(next_directional_idx)
-        //        } else {
-        //            Err(ContextError::MaxDirectionalLightsGenerated)
-        //        }
-        //    },
-        //    LightSourceForm::Point => {
-        //        if self.num_point_lights_made < self.max_point_lighs {
-        //            let next_point_idx = self.num_point_lights_made;
-        //            Ok(next_point_idx)
-        //        } else {
-        //            Err(ContextError::MaxPointLightsGenerated)
-        //        }
-        //    },
-        //    LightSourceForm::Spot => {
-        //        if self.num_spot_lights_made < self.max_spot_lighs {
-        //            let next_spot_idx = self.num_spot_lights_made;
-        //            Ok(next_spot_idx)
-        //        } else {
-        //            Err(ContextError::MaxSpotLightsGenerated)
-        //        }
-        //    },
-        //}
     }
+
     pub fn generate_point_light(
         &mut self, render:&Context, pos:[f32;3], diffuse_colour:[f32;3]
     ) -> Result<PointLight, ContextError> {

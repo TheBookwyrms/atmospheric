@@ -1,6 +1,6 @@
-use crate::opengl_helpers::image_processing::Image;
+use crate::image_processing::Image;
 use crate::opengl::gl::Gl;
-use crate::opengl_helpers::enums::{
+use crate::enums::{
     GlError, InternalFormat, OpenglTexture,
     TextureMagFilter, TextureMinFilter, TextureTarget,
     TextureWrap, TextureWrapping, UniformType,

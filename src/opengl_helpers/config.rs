@@ -1,5 +1,5 @@
-use crate::opengl_helpers::enums::{CameraMode, LightSourceForm};
-use crate::lighting::LightCounter;
+use crate::enums::{CameraMode, LightSourceForm};
+use crate::objects::lighting::LightCounter;
 
 #[derive(Clone, Copy)]
 pub struct RenderInitialConfig {

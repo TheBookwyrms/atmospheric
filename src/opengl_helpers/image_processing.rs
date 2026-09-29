@@ -1,12 +1,12 @@
-use std::fs;
+use std::{fs::{self, File}, io::{Error, Write}};
 
-use crate::opengl_helpers::enums::{ImageFormat, PPMType};
+use crate::enums::{ImageFormat, InternalFormat, PPMType};
 
 //use numeracy::matrices::Matrix;
 use numeracy::matrices::Matrix;
 
 use zune_jpeg;
-use zune_png;
+use zune_png::{self, zune_core::{colorspace, options::EncoderOptions}};
 
 
 pub struct PPM {
@@ -33,6 +33,26 @@ pub struct Image {
     pub format:ImageFormat,
 }
 impl Image {
+
+    pub fn save_png(bytes_vec:Vec<u8>, filename:&str, wh:(usize, usize), colourspace:InternalFormat, flip:bool) -> Result<(), Error> {
+        let colours = match colourspace {
+            InternalFormat::RGB  => colorspace::ColorSpace::RGB,
+            InternalFormat::RGBA => colorspace::ColorSpace::RGBA,
+        };
+        let encoder_options = EncoderOptions::default()
+                                                             .set_width(wh.0)
+                                                             .set_height(wh.1)
+                                                             .set_colorspace(colours);
+        let pixels = if flip {
+            Self::flip_vertically(bytes_vec, wh.0, wh.1, colours.num_components())
+        } else {
+            bytes_vec
+        };
+        let mut png_encoder = zune_png::PngEncoder::new(&pixels, encoder_options);
+        let encoded = png_encoder.encode();
+        let mut file = File::create(filename)?;
+        file.write_all(&encoded)
+    }
 
     fn get_data_from_bytes(file_bytes:&[u8], format:ImageFormat) -> (Vec<u8>, usize, usize, usize) {
 

@@ -1,7 +1,7 @@
 //use crate::config::RenderInitialConfig;
-use crate::lighting::LightCounter;
+use crate::objects::lighting::LightCounter;
 use crate::opengl::gl::Gl;
-use crate::opengl_helpers::enums::{
+use crate::enums::{
     DataFormat, DrawCall, DrawMode, GlError, LightSourceForm, ShaderType, UniformType
 };
 use crate::opengl::intermediate_opengl;

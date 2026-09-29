@@ -1,21 +1,22 @@
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
-use crate::opengl_helpers::camera::Camera;
-use crate::opengl_helpers::config::RenderInitialConfig;
-use crate::opengl_helpers::enums::{
-    BufferBit, CameraMode, DataFormat, DrawType, GlError, Object, UniformType, ContextError, CameraVector
+use crate::camera::Camera;
+use crate::config::RenderInitialConfig;
+use crate::enums::{
+    BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, InternalFormat, Object, UniformType
 };
-use crate::lighting::LightingGenerator;
+use crate::image_processing;
+use crate::objects::lighting::{LightingGenerator, LightCounter};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
-use crate::opengl::abstractions::{Programs, ProgramSelect, Textures, Uniform, WithVao, WithVbo, WithEbo, WithVaoVbo, WithVaoEbo};
+use crate::opengl::abstractions::{ProgramSelect, Programs, ShaderProgram, Textures, Uniform, WithEbo, WithVao, WithVaoEbo, WithVaoVbo, WithVbo};
 
 //use numeracy::matrices::Matrix;
 use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
-use glfw;
+use glfw::{self, Modifiers};
 use glfw::{Action, Key};
-use crate::window::Window;
+use crate::glfw::window::Window;
 
 
 pub struct Context<'a> {
@@ -23,26 +24,32 @@ pub struct Context<'a> {
     pub camera:Camera,
     pub programs:Programs,
     pub textures:Textures<'a>,
-    pub lighting_generator:LightingGenerator,
     pub paused:bool,
     pub pause_time:Instant,
     pub current_time:Instant,
 }
 impl<'a> Context<'a> {
-    pub fn default(config:RenderInitialConfig) -> Result<Self, ContextError> {
-        let window = Window::new_opengl(config.window_name, config.window_width, config.window_height)?;
-        let camera = Camera::new(config.camera_mode);
-        //let camera = Camera::new(CameraMode::PointOfView);
-        //let camera = Camera::new(CameraMode::Encompassing);
+    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter) -> Result<Self, ContextError> {
+        let window = Window::new_opengl(window_name, window_width, window_height)?;
+        let camera = Camera::new(camera_mode);
 
-        //panic!("add info for number of lights by passing it through config");
-        let programs = Programs::compile_all(&window.opengl, &config.max_lights)?;
+        let programs = Programs::compile_all(&window.opengl, &max_lights)?;
         let textures = Textures::new_empty();
 
-        let lighting_generator = LightingGenerator::init(&config.max_lights);
+        Ok(Self {
+            window, camera, programs, textures,
+            paused:false, pause_time:Instant::now(), current_time:Instant::now(),
+         })
+    }
+    pub fn new_default(max_lights:LightCounter) -> Result<Self, ContextError> {
+        let window = Window::new_opengl("window name!", 1920, 1080)?;
+        let camera = Camera::new(CameraMode::Encompassing);
+
+        let programs = Programs::compile_all(&window.opengl, &max_lights)?;
+        let textures = Textures::new_empty();
 
         Ok(Self {
-            window, camera, programs, textures, lighting_generator,
+            window, camera, programs, textures,
             paused:false, pause_time:Instant::now(), current_time:Instant::now(),
          })
     }
@@ -149,12 +156,8 @@ impl<'a> Context<'a> {
         intermediate_opengl::set_uniform(&self.window.opengl, program_id, uniform.name, uniform.uniform_type, value.as_ptr())
     }
 
-    pub fn compile_custom_program(&mut self, vertex_text:&str, fragment_text:&str) -> Result<u32, GlError> {
-        Programs::compile_program_from_text(&self.window.opengl, vertex_text, fragment_text)
-    }
-
-    pub fn use_custom_program(&mut self, shader_id:u32) -> Result<(), GlError> {
-        self.programs.use_program(&self.window.opengl, ProgramSelect::Custom(shader_id))
+    pub fn use_custom_program(&mut self, shader:ShaderProgram) -> Result<(), GlError> {
+        self.programs.use_program(&self.window.opengl, ProgramSelect::Custom(shader))
     }
 
 
@@ -263,7 +266,6 @@ impl<'a> Context<'a> {
                 },
                 
                 glfw::WindowEvent::MouseButton(button, action, _mods) => {
-                    {
                     match action {
                         Action::Press => {
                             match button {
@@ -282,7 +284,7 @@ impl<'a> Context<'a> {
                         Action::Repeat => {},
                     };
                     Ok(())
-                    }
+                    
                 },
 
                 glfw::WindowEvent::Scroll(_xoffset, yoffset) => {
@@ -325,16 +327,27 @@ impl<'a> Context<'a> {
                         },
                     }
                 },
-
-                glfw::WindowEvent::Key(_, _, _, _) => {Ok(())},
-                glfw::WindowEvent::Char(_) => {Ok(())},
-                glfw::WindowEvent::CharModifiers(_, _) => {Ok(())},
+                
+                glfw::WindowEvent::Key(Key::LeftControl, 29, Action::Press, _) => {Ok(())}
+                glfw::WindowEvent::Key(Key::LeftControl, 29, Action::Release, _) => {Ok(())}
+                glfw::WindowEvent::Key(Key::K, _, Action::Press, Modifiers::Control) => {
+                    let pixels = self.window.read_pixels_full_window(&self.window.opengl, InternalFormat::RGBA);
+                    let mut a = format!("screenshot_{:?}", SystemTime::duration_since(&SystemTime::now(), SystemTime::UNIX_EPOCH).unwrap().as_secs());
+                    a.push_str(".png");
+                    image_processing::Image::save_png(pixels, a.as_str(), self.window.wh_usize(), InternalFormat::RGBA, true).unwrap();
+                    Ok(())
+                }
+                glfw::WindowEvent::CharModifiers('k', Modifiers::Control) => Ok(()),
+                glfw::WindowEvent::Key(Key::K, _, Action::Release, Modifiers::Control) => Ok(()),
+                //glfw::WindowEvent::Key(_, _, _, _) => {Ok(())},
+                //glfw::WindowEvent::Char(_) => {Ok(())},
+                //glfw::WindowEvent::CharModifiers(_, _) => {Ok(())},
                 glfw::WindowEvent::Focus(_) => {Ok(())},
-                glfw::WindowEvent::Pos(_, _) => {Ok(())},
-                glfw::WindowEvent::FramebufferSize(_, _) => {Ok(())},
-                glfw::WindowEvent::Iconify(_) => {Ok(())},
-                glfw::WindowEvent::Maximize(_) => {Ok(())},
-                glfw::WindowEvent::Refresh => {Ok(())},
+                //glfw::WindowEvent::Pos(_, _) => {Ok(())},
+                //glfw::WindowEvent::FramebufferSize(_, _) => {Ok(())},
+                //glfw::WindowEvent::Iconify(_) => {Ok(())},
+                //glfw::WindowEvent::Maximize(_) => {Ok(())},
+                //glfw::WindowEvent::Refresh => {Ok(())},
                 glfw::WindowEvent::CursorEnter(_) => {Ok(())},
                 _ => Err(ContextError::NewGLFWEventDetected(event)),
             }?;

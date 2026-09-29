@@ -176,9 +176,10 @@ fn main() -> Result<(), BuildError> {
 
 
     programs_file.write(r##"
+        use crate::opengl::abstractions::ShaderProgram;
         #[derive(Debug, PartialEq, Clone, Copy)]
         pub enum ProgramSelect {
-        Custom(u32),
+        Custom(ShaderProgram),
     "##.as_bytes())?;
     for (shader_pascal, _shader_upper, _shader_lower) in shader_names_hashset.clone() {
         programs_file.write(format!("Select{},", shader_pascal).as_bytes())?;
@@ -373,9 +374,9 @@ fn main() -> Result<(), BuildError> {
         "##).as_bytes())?;
     }
     programs_file.write(r##"
-        ProgramSelect::Custom(id) => {
-            intermediate_opengl::use_program(opengl, id)?;
-            self.current_program = Some(id);
+        ProgramSelect::Custom(shader) => {
+            intermediate_opengl::use_program(opengl, shader.get_id())?;
+            self.current_program = Some(shader.get_id());
             self.current_program_type = Some(program);
             Ok(())
         },
@@ -435,7 +436,7 @@ fn main() -> Result<(), BuildError> {
     let compiled_assets_path = Path::new(&out_dir).join("compiled_assets.rs");
     let mut compiled_assets_file = File::create(&compiled_assets_path)?;
 
-    compiled_assets_file.write(format!(r##"use crate::opengl_helpers::enums::ImageFormat;"##).as_bytes())?;
+    compiled_assets_file.write(format!(r##"use crate::enums::ImageFormat;"##).as_bytes())?;
 
 
     let paths = fs::read_dir(&project_folder.join("src").join("compiled_assets"))?;

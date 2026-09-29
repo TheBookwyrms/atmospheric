@@ -7,6 +7,10 @@ use std::ffi::NulError;
 
 use crate::opengl::gl::Gl;
 use crate::opengl::intermediate_opengl;
+use crate::image_processing::Image;
+use crate::materials::Material;
+
+use numeracy::matrices::{Matrix, S1, S2};
 
 
 
@@ -412,4 +416,23 @@ pub enum LightSourceForm {
 pub enum UpdateVertexAttrib {
     PerVertex,
     PerInstance(u32)
+}
+
+
+pub enum ObjectColour<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
+   None,
+   Constant( Matrix<f32, 2, S2<4, 1>>),
+   ConstantPerInstance([Matrix<f32, 2, S2<4, 1>>;NUM_INSTANCES]),
+   PerVertex(Matrix<f32, 2, S2<4, NUM_VERTICES>>),
+}
+
+pub enum ObjectTexture<const NUM_VERTICES:usize> {
+   None,
+   PerVertex(Image, Image, Matrix<f32, 2, S2<2, NUM_VERTICES>>),
+}
+
+pub enum ObjectMaterials<const NUM_VERTICES:usize> {
+   None,
+   Constant( Material),
+   PerVertex(Matrix<Material, 1, S1<NUM_VERTICES>>),
 }

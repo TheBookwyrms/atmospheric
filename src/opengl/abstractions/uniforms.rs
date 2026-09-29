@@ -1,4 +1,4 @@
-use crate::opengl_helpers::enums::UniformType;
+use crate::enums::UniformType;
 
 pub struct Uniform<'a> {
     pub name:&'a str,

@@ -107,21 +107,25 @@ impl Camera {
     pub fn new(camera_mode:CameraMode) -> Camera {
 
         let camera_position = Vector::from_1darray([0.0, 0.0, 10.0, 1.0]);
-        //let camera_position = Vector::from_1darray([0.0, 0.0, 20.0, 1.0]);
-        let camera_target = Vector::from_1darray([0.0, 0.0, -10.0, 1.0]);
-        let camera_target = Vector::from_1darray([0.0, 0.0, 0.0, 1.0]);
-        let camera_up = Vector::from_1darray([0.0, 1.0, 0.0, 1.0]);
-        let camera_right = Vector::from_1darray([1.0, 0.0, 0.0, 1.0]);
+        let camera_target   = Vector::from_1darray([0.0, 0.0, 0.0,  1.0]);
+        let camera_up       = Vector::from_1darray([0.0, 1.0, 0.0,  1.0]);
+        let camera_right    = Vector::from_1darray([1.0, 0.0, 0.0,  1.0]);
+
+        let (pan_sensitivity, angle_sensitivity, zoom) = match camera_mode {
+            CameraMode::Encompassing => (0.0075, 0.0025, 20.0 ),
+            CameraMode::PointOfView  => (0.1, 0.05  ,  0.75),
+            //CameraMode::PointOfView  => (0.075, 0.025  ,  0.75),
+        };
 
         Camera {
             render_distance:512,
-            zoom:20.0,
+            zoom,
             //zoom:5.0,
             //zoom:1.0,
             //pan_sensitivity  :0.001,
             //angle_sensitivity:0.01,
-            pan_sensitivity  :0.0075,
-            angle_sensitivity:0.0025,
+            pan_sensitivity,
+            angle_sensitivity,
             panning:false, angling:false,
             camera_mode:camera_mode,
             camera_info_matrix:CameraInfoMatrix::instantiate(

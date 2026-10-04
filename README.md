@@ -23,4 +23,4 @@ TO DO
     - [ ] move glfw window keybindings into individual functions (modules)
 - [x] test out whether multiple shader programs can be used sequentially without overriding each other
     - [ ] can i use multiple shader calls, at multiple (concurrent or different) positions, and see all of the results simultaneously, without conflicts
-- [ ] migrate things from rendering_stuff_rs to atmospheric
+- [x] migrate things from rendering_stuff_rs to atmospheric

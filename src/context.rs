@@ -6,7 +6,7 @@ use crate::enums::{
     BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, InternalFormat, Object, UniformType
 };
 use crate::image_processing;
-use crate::objects::lighting::{LightingGenerator, LightCounter};
+use crate::objects::lighting::{Light, LightCounter, LightingGenerator};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
 use crate::opengl::abstractions::{ProgramSelect, Programs, ShaderProgram, Textures, Uniform, WithEbo, WithVao, WithVaoEbo, WithVaoVbo, WithVbo};
@@ -161,7 +161,10 @@ impl<'a> Context<'a> {
     }
 
 
-    pub fn use_program(&mut self, program_type:ProgramSelect) -> Result<(), ContextError> {
+    /// lights is used for setting lighting uniforms \
+    /// such as for blinn-phong lighting, where we need light source uniforms \
+    /// if there are no lights needed, pass empty vec \
+    pub fn use_program(&mut self, program_type:ProgramSelect, lights:Vec<Light>) -> Result<(), ContextError> {
 
         self.programs.use_program(&self.window.opengl, program_type)?;
 
@@ -180,6 +183,9 @@ impl<'a> Context<'a> {
             ProgramSelect::SelectInstancingBlinnPhong => {
                 self.set_orthographic_camera_uniforms()?;
                 self.set_blinn_phong_uniforms()?;
+                for light in lights {
+                    light.set_lighting_uniforms(&self)?
+                }
             },
             //ProgramSelect::SelectInstancingPhongTexture => {
             //    self.set_orthographic_camera_uniforms()?;

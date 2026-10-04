@@ -322,6 +322,7 @@ pub enum ContextError {
     MaxDirectionalLightsGenerated,
     MaxPointLightsGenerated,
     MaxSpotLightsGenerated,
+    NoLightSelected,
 }
 
 impl From<GlError> for ContextError {
@@ -426,9 +427,9 @@ pub enum ObjectColour<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
    PerVertex(Matrix<f32, 2, S2<4, NUM_VERTICES>>),
 }
 
-pub enum ObjectTexture<const NUM_VERTICES:usize> {
+pub enum ObjectTexture<'a, const NUM_VERTICES:usize> {
    None,
-   PerVertex(Image, Image, Matrix<f32, 2, S2<2, NUM_VERTICES>>),
+   PerVertex(Image, Image, &'a Matrix<f32, 2, S2<2, NUM_VERTICES>>),
 }
 
 pub enum ObjectMaterials<const NUM_VERTICES:usize> {

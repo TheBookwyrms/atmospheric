@@ -1,12 +1,9 @@
 use numeracy::matrices::{Matrix, S2};
 
 
-use crate::enums::{
-    DataFormat, DrawMode,
-    DrawType, AttributeLoc::At,
-    UpdateVertexAttrib::{PerInstance, PerVertex},
-    ObjectColour
-};
+use crate::{enums::{
+    AttributeLoc::At, DataFormat, DrawMode, DrawType, ObjectColour, UpdateVertexAttrib::{PerInstance, PerVertex}
+}, objects::vao_instancing_object::InstancingObject};
 use crate::opengl::abstractions::{WithVao, WithVbo};
 use crate::opengl::gl::Gl;
 
@@ -14,8 +11,6 @@ use std::sync::LazyLock;
 
 
 static MAT_ONES_LAZYLOCK:LazyLock<Matrix<f32, 2, S2<4, 1>>> = LazyLock::new(|| Matrix::from_2darray([[1.; 4]]));
-
-
  
  
 pub struct SimpleColourObject<const NUM_VERTICES:usize> {

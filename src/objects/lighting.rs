@@ -7,6 +7,55 @@ use crate::opengl::abstractions::{WithVao, WithVbo};
 use numeracy::matrices::{Matrix, S1, S2};
 use numeracy::vectors::Vector;
 
+
+
+
+
+
+pub struct Light {
+    point       : Option<PointLight>,
+    spot        : Option<SpotLight>,
+    directional : Option<DirectionalLight>,
+}
+impl Light {
+    pub fn set_lighting_uniforms(&self, context:&Context) -> Result<(), ContextError> {
+        if let Some(point) = self.point {
+            point.set_lighting_uniforms(context)
+        } else if let Some(spot) = self.spot {
+            spot.set_lighting_uniforms(context)
+        } else if let Some(dir) = self.directional {
+            dir.set_lighting_uniforms(context)
+        } else {
+            Err(ContextError::NoLightSelected)
+        }
+    }
+}
+impl From<PointLight> for Light {
+    fn from(value: PointLight) -> Self {
+        Light { point: Some(value), spot: None, directional: None }
+    }
+}
+impl From<SpotLight> for Light {
+    fn from(value: SpotLight) -> Self {
+        Light { point: None, spot: Some(value), directional: None }
+    }
+}
+impl From<DirectionalLight> for Light {
+    fn from(value: DirectionalLight) -> Self {
+        Light { point: None, spot: None, directional: Some(value) }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Clone, Copy)]
 pub struct LightCounter {
     directional_lights:u16,

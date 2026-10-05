@@ -1,22 +1,49 @@
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Instant, SystemTime};
 
 use crate::camera::Camera;
-use crate::config::RenderInitialConfig;
 use crate::enums::{
     BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, InternalFormat, Object, UniformType
 };
 use crate::image_processing;
+use crate::modules::keybindings::KeybindingModule;
 use crate::objects::lighting::{Light, LightCounter, LightingGenerator};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
-use crate::opengl::abstractions::{ProgramSelect, Programs, ShaderProgram, Textures, Uniform, WithEbo, WithVao, WithVaoEbo, WithVaoVbo, WithVbo};
+use crate::opengl::abstractions::{ProgramSelect, Programs, ShaderProgram, Textures, Uniform, WithEbo, WithVao, WithVbo};
 
-//use numeracy::matrices::Matrix;
 use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
-use glfw::{self, Modifiers};
-use glfw::{Action, Key};
+use glfw::WindowEvent;
 use crate::glfw::window::Window;
+
+use crate::modules::keybindings::{
+    camera_movement::MouseOnlyMovement,
+    pause::PauseKeybindings,
+    screenshot::ScreenshotKeybindings,
+    window::DefaultWindowKeybindings,
+};
+
+
+pub struct AssortedContextDetails {
+    pub paused:bool,
+    pub pause_time:Instant,
+    /// pause_minimum is minimum duration of a pause, in milliseconds
+    pub pause_minimum:u64,
+    pub current_time:Instant,
+    pub screenshot_naming_convention:Box<dyn Fn()->String>,
+}
+impl AssortedContextDetails {
+    fn default_naming_convention() -> String {
+        format!("screenshot_{:?}", SystemTime::duration_since(&SystemTime::now(), SystemTime::UNIX_EPOCH).unwrap().as_secs())
+    }
+    pub fn default() -> AssortedContextDetails {
+        Self {
+            paused: false, pause_time: Instant::now(), pause_minimum:10,
+            current_time: Instant::now(),
+            screenshot_naming_convention: Box::new(Self::default_naming_convention)
+        }
+    }
+}
 
 
 pub struct Context<'a> {
@@ -24,12 +51,13 @@ pub struct Context<'a> {
     pub camera:Camera,
     pub programs:Programs,
     pub textures:Textures<'a>,
-    pub paused:bool,
-    pub pause_time:Instant,
-    pub current_time:Instant,
+    pub keybinding_modules:Vec<Box<dyn KeybindingModule>>,
+
+
+    pub assorted_details:AssortedContextDetails,
 }
 impl<'a> Context<'a> {
-    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter) -> Result<Self, ContextError> {
+    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<Box<dyn KeybindingModule>>) -> Result<Self, ContextError> {
         let window = Window::new_opengl(window_name, window_width, window_height)?;
         let camera = Camera::new(camera_mode);
 
@@ -37,8 +65,8 @@ impl<'a> Context<'a> {
         let textures = Textures::new_empty();
 
         Ok(Self {
-            window, camera, programs, textures,
-            paused:false, pause_time:Instant::now(), current_time:Instant::now(),
+            window, camera, programs, textures, keybinding_modules,
+            assorted_details:AssortedContextDetails::default(),
          })
     }
     pub fn new_default(max_lights:LightCounter) -> Result<Self, ContextError> {
@@ -48,9 +76,16 @@ impl<'a> Context<'a> {
         let programs = Programs::compile_all(&window.opengl, &max_lights)?;
         let textures = Textures::new_empty();
 
+        let keybinding_modules:Vec<Box<dyn KeybindingModule>> = vec![
+            Box::new(MouseOnlyMovement {}),
+            Box::new(PauseKeybindings {}),
+            Box::new(ScreenshotKeybindings {}),
+            Box::new(DefaultWindowKeybindings {}),
+        ];
+
         Ok(Self {
-            window, camera, programs, textures,
-            paused:false, pause_time:Instant::now(), current_time:Instant::now(),
+            window, camera, programs, textures, keybinding_modules,
+            assorted_details:AssortedContextDetails::default(),
          })
     }
     pub fn render_over(&self) -> bool { self.window.window.should_close() }
@@ -76,13 +111,11 @@ impl<'a> Context<'a> {
         self.programs.disuse_program(&self.window.opengl);
 
         
-        let dt = match Instant::now().duration_since(self.current_time).as_secs_f32() {
-            0.0 => 0.0,
-            t => t,};
+        let dt = Instant::now().duration_since(self.assorted_details.current_time).as_secs_f32();
         //println!("dt {}", dt);
         let _fps = 1.0/dt;
         //println!("_fps {}", _fps);
-        self.current_time = Instant::now();
+        self.assorted_details.current_time = Instant::now();
 
 
         // double buffered window for rendering
@@ -253,111 +286,12 @@ impl<'a> Context<'a> {
 
     fn poll_and_perform_polled_events(&mut self) -> Result<(), ContextError> {
         self.poll_events();
-        for (_, event) in glfw::flush_messages(&self.window.events) {
-            match event {
-
-                glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                    {let _ = &self.window.window.set_should_close(true); Ok(())}
-                },
-                glfw::WindowEvent::Key(Key::Space, _, Action::Press, _) => {
-                    match self.paused {
-                        false => {self.paused=true; self.pause_time=Instant::now()},
-                        true => if Instant::now().duration_since(self.pause_time) > Duration::from_millis(10) {self.paused=false},
-                    };
-                    Ok(())
-                },
-
-                glfw::WindowEvent::Close => {
-                    {let _ = &self.window.window.set_should_close(true); Ok(())}
-                },
-                
-                glfw::WindowEvent::MouseButton(button, action, _mods) => {
-                    match action {
-                        Action::Press => {
-                            match button {
-                                glfw::MouseButton::Button1 => {self.camera.panning = true}, // left button
-                                glfw::MouseButton::Button2 => {self.camera.angling = true}, // right button
-                                _ => {},
-                            }
-                        },
-                        Action::Release => {
-                            match button {
-                                glfw::MouseButton::Button1 => {self.camera.panning = false}, // left button
-                                glfw::MouseButton::Button2 => {self.camera.angling = false}, // right button
-                                _ => {},
-                            }
-                        },
-                        Action::Repeat => {},
-                    };
-                    Ok(())
-                    
-                },
-
-                glfw::WindowEvent::Scroll(_xoffset, yoffset) => {
-                    {self.camera.zoom -= ((0.24*yoffset) as f32) * self.camera.zoom*0.25; Ok(())}
-                },
-
-                glfw::WindowEvent::CursorPos(xpos, ypos) => {
-                    let dx = xpos as f32 - self.window.last_cursor_pos[0];
-                    let dy = ypos as f32 - self.window.last_cursor_pos[1];
-
-                    if self.camera.panning {
-                        let sensitivity = self.camera.pan_sensitivity * self.camera.zoom;
-                        self.camera.translation_by_internal_axes(0.0, -dx*sensitivity, dy*sensitivity)?;
-                        //self.camera.pan_xyz += Vector::from_1darray([dx, -1.0*dy, 0.0])
-                        //                                .multiply_by_constant(sensitivity);
-                    }
-                    if self.camera.angling {
-                        let sensitivity = self.camera.angle_sensitivity * self.camera.zoom;
-                        self.camera.translate_relative_to_the_target(0.0, -dx*sensitivity, dy*sensitivity)?;
-                        //self.camera.angle_xyz += Vector::from_1darray([dy, dx, 0.0])
-                        //                                .multiply_by_constant(sensitivity);
-                    }
-
-                    self.window.last_cursor_pos = [xpos as f32, ypos as f32];
-
-                    Ok(())
-                },
-
-                glfw::WindowEvent::Size(width, height) => {
-                    match (width==0) || (height==0) {
-                        true => {
-                            //glfw::Window::iconify(&mut self);
-                            self.window.window.iconify();
-                            Ok(())
-                        },
-                        //true => Err(ContextError::GLFWResizeBoundsError((width, height))),
-                        false => {
-                            self.window.aspect_ratio = width as f32/height as f32;
-                            Ok(intermediate_opengl::viewport(&self.window.opengl, width, height))
-                        },
-                    }
-                },
-                
-                
-                glfw::WindowEvent::Key(Key::LeftControl, 29, Action::Press, _) => {Ok(())}
-                glfw::WindowEvent::Key(Key::LeftControl, 29, Action::Release, _) => {Ok(())}
-                glfw::WindowEvent::Key(Key::K, _, Action::Press, Modifiers::Control) => {
-                    let pixels = self.window.read_pixels_full_window(&self.window.opengl, InternalFormat::RGBA);
-                    let mut a = format!("screenshot_{:?}", SystemTime::duration_since(&SystemTime::now(), SystemTime::UNIX_EPOCH).unwrap().as_secs());
-                    a.push_str(".png");
-                    image_processing::Image::save_png(pixels, a.as_str(), self.window.wh_usize(), InternalFormat::RGBA, true).unwrap();
-                    Ok(())
-                }
-                glfw::WindowEvent::CharModifiers('k', Modifiers::Control) => Ok(()),
-                glfw::WindowEvent::Key(Key::K, _, Action::Release, Modifiers::Control) => Ok(()),
-                //glfw::WindowEvent::Key(_, _, _, _) => {Ok(())},
-                //glfw::WindowEvent::Char(_) => {Ok(())},
-                //glfw::WindowEvent::CharModifiers(_, _) => {Ok(())},
-                glfw::WindowEvent::Focus(_) => {Ok(())},
-                //glfw::WindowEvent::Pos(_, _) => {Ok(())},
-                //glfw::WindowEvent::FramebufferSize(_, _) => {Ok(())},
-                //glfw::WindowEvent::Iconify(_) => {Ok(())},
-                //glfw::WindowEvent::Maximize(_) => {Ok(())},
-                //glfw::WindowEvent::Refresh => {Ok(())},
-                glfw::WindowEvent::CursorEnter(_) => {Ok(())},
-                _ => Err(ContextError::NewGLFWEventDetected(event)),
-            }?;
+        let events = glfw::flush_messages(&self.window.events).map(|(_, e)| e).collect::<Vec<WindowEvent>>();
+        let keybindings = &self.keybinding_modules;
+        for event in events {
+            for module in keybindings {
+                module.call_keybindings(&event, &mut self.window, &mut self.camera, &mut self.assorted_details)?;
+            }
         }
         Ok(())
     }

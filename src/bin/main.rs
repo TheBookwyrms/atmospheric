@@ -27,16 +27,30 @@ use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use std::f32::consts::PI;
 
 
+use atmospheric::modules::keybindings::{
+    KeybindingModule,
+    camera_movement::MouseOnlyMovement,
+    pause::PauseKeybindings,
+    screenshot::ScreenshotKeybindings,
+    window::DefaultWindowKeybindings,
+};
+
 
 
 fn main() -> Result<(), ContextError> {
 
+    let keybinding_modules:Vec<Box<dyn KeybindingModule>> = vec![
+        Box::new(MouseOnlyMovement {}),
+        Box::new(PauseKeybindings {}),
+        Box::new(ScreenshotKeybindings {}),
+        Box::new(DefaultWindowKeybindings {}),
+    ];
 
     let max_lights = LightCounter::max_values(1, 10, 10);
     let mut lighting_generator = LightingGenerator::init(&max_lights);
 
     //let mut render = Context::new_default(max_lights)?;
-    let mut render = Context::new("window name", 900, 900, CameraMode::Encompassing, max_lights)?;
+    let mut render = Context::new("window name", 900, 900, CameraMode::Encompassing, max_lights, keybinding_modules)?;
     render.setup_render();
 
 
@@ -77,7 +91,7 @@ fn main() -> Result<(), ContextError> {
 
         let rotate = Matrix::rotate(Vector::from_1darray([rx, ry, rz]));
         let translate = Matrix::translate(Vector::from_1darray([tx, ty, tz]));
-        
+
         // transpose this as opengl uses column-major format
         // while i use row-major format for these matrices
         transformation_matrices[i] = (translate.matmul(&rotate)).transpose();

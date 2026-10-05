@@ -1,7 +1,7 @@
 use glfw::{InitError, WindowEvent};
 use numeracy::enums::MatrixError;
 use numeracy::matrices::MatrixError as MatrixErrorNew;
-use std::str::Utf8Error;
+use std::{io::Error, str::Utf8Error};
 use std::num::TryFromIntError;
 use std::ffi::NulError;
 
@@ -323,11 +323,18 @@ pub enum ContextError {
     MaxPointLightsGenerated,
     MaxSpotLightsGenerated,
     NoLightSelected,
+    IOError(Error),
 }
 
 impl From<GlError> for ContextError {
     fn from(value: GlError) -> Self {
         Self::GLError(value)
+    }
+}
+
+impl From<Error> for ContextError {
+    fn from(value: Error) -> Self {
+        Self::IOError(value)
     }
 }
 

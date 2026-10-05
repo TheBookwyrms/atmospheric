@@ -1,4 +1,3 @@
-use crate::config::RenderInitialConfig;
 use crate::context::Context;
 use crate::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
 //use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};

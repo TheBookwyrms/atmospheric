@@ -35,7 +35,7 @@ impl<T:Point+Clone> OcTreeItem<T> {
     pub fn get_bounds(self) -> Vec<(PointThing, f32)> {
         match self {
             OcTreeItem::None => vec![],
-            OcTreeItem::Value(vec) => vec![],
+            OcTreeItem::Value(_) => vec![],
             OcTreeItem::Node(node) => node.get_all_bounds(),
         }
     }
@@ -58,13 +58,13 @@ fn _subdivide_node_internal_match<T:Clone+Point>(
     current_node:OcTreeItem<T>, centre:PointThing, half_side_len:f32, max_per_node:usize
 ) -> Result<OcTreeItem<T>, TreeError> {
 
-    let mut new_octree = Octree::new(centre, half_side_len);
+    let new_octree = Octree::new(centre, half_side_len);
     let new_new_octree = match current_node {
         OcTreeItem::None => new_octree,
         OcTreeItem::Node(node) => {Err(TreeError::NodeAlreadySubdivided)?; new_octree},
         OcTreeItem::Value(points) => { new_octree.insert(points, max_per_node)? },
     };
-    let mut new_current_node = OcTreeItem::Node(Box::new(new_new_octree));
+    let new_current_node = OcTreeItem::Node(Box::new(new_new_octree));
     Ok(new_current_node)
 }
 
@@ -155,11 +155,6 @@ impl<T:Clone+Point> Octree<T> {
         let (out_bottom, out_top) = (py-half >= py, py+half <= py);
         let (out_back, out_front) = (pz-half >= pz, pz+half <= pz);
 
-        let top_left = top && left;
-        let top_right = top && right;
-        let bottom_left = bottom && left;
-        let bottom_right = bottom && right;
-
         if out_bottom || out_left || out_right || out_top || out_back || out_front {
             RelativePointPos::OutOfBounds
         } else if front {
@@ -192,7 +187,7 @@ impl<T:Clone+Point> Octree<T> {
             }
         }
     }
-    pub fn insert(mut self, points:Vec<T>, max_per_node:usize) -> Result<Self, TreeError> {
+    pub fn insert(self, points:Vec<T>, max_per_node:usize) -> Result<Self, TreeError> {
         let mut front_top_left_points = vec![];
         let mut front_top_right_points = vec![];
         let mut front_bottom_left_points = vec![];
@@ -233,7 +228,7 @@ impl<T:Clone+Point> Octree<T> {
             OcTreeItem::None, OcTreeItem::None, OcTreeItem::None, OcTreeItem::None,
         ];
         let (centre, side_len) = (self.centre, 2.*self.half_side_length);
-        for (idx, (mut corner, points, relative_position)) in corners_initial.into_iter().enumerate() {
+        for (idx, (corner, points, relative_position)) in corners_initial.into_iter().enumerate() {
             let oc_tree_i = match corner {
                 OcTreeItem::None => {
                     _insert_empty_tree(points, max_per_node, centre, side_len, relative_position)?
@@ -242,7 +237,7 @@ impl<T:Clone+Point> Octree<T> {
                     vec.extend(points);
                     _insert_empty_tree(vec, max_per_node, centre, side_len, relative_position)?
                 },
-                OcTreeItem::Node( mut node) => {
+                OcTreeItem::Node( node) => {
                     let new_node = node.insert(points, max_per_node)?;
                     OcTreeItem::Node(Box::new(new_node))
                 },

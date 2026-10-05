@@ -5,13 +5,13 @@ fn _subdivide_node_internal_match<T:Clone+Point>(
     current_node:QuadTreeItem<T>, centre:PointThing, half_side_len:f32, max_per_node:usize
 ) -> Result<QuadTreeItem<T>, TreeError> {
 
-    let mut new_quadtree = QuadTree::new(centre, half_side_len);
+    let new_quadtree = QuadTree::new(centre, half_side_len);
     let new_new_quadtree = match current_node {
         QuadTreeItem::None => new_quadtree,
         QuadTreeItem::Node(node) => {Err(TreeError::NodeAlreadySubdivided)?; new_quadtree},
         QuadTreeItem::Value(points) => { new_quadtree.insert(points, max_per_node)? },
     };
-    let mut new_current_node = QuadTreeItem::Node(Box::new(new_new_quadtree));
+    let new_current_node = QuadTreeItem::Node(Box::new(new_new_quadtree));
     Ok(new_current_node)
 }
 
@@ -56,7 +56,7 @@ impl<T:Point+Clone> QuadTreeItem<T> {
     pub fn get_bounds(self) -> Vec<(PointThing, f32)> {
         match self {
             QuadTreeItem::None => vec![],
-            QuadTreeItem::Value(vec) => vec![],
+            QuadTreeItem::Value(_) => vec![],
             QuadTreeItem::Node(node) => node.get_all_bounds(),
         }
     }
@@ -161,7 +161,7 @@ impl<T:Clone+Point> QuadTree<T> {
 
         let mut resulting_quadtrees = [QuadTreeItem::None, QuadTreeItem::None, QuadTreeItem::None, QuadTreeItem::None];
         let (centre, side_len) = (self.centre, 2.*self.half_side_length);
-        for (idx, (mut corner, points, relative_position)) in corners_initial.into_iter().enumerate() {
+        for (idx, (corner, points, relative_position)) in corners_initial.into_iter().enumerate() {
             let quad_tree_i = match corner {
                 QuadTreeItem::None => {
                     _insert_empty_tree(points, max_per_node, centre, side_len, relative_position)?
@@ -170,7 +170,7 @@ impl<T:Clone+Point> QuadTree<T> {
                     vec.extend(points);
                     _insert_empty_tree(vec, max_per_node, centre, side_len, relative_position)?
                 },
-                QuadTreeItem::Node( mut node) => {
+                QuadTreeItem::Node( node) => {
                     let new_node = node.insert(points, max_per_node)?;
                     QuadTreeItem::Node(Box::new(new_node))
                 },

@@ -2,11 +2,10 @@ use std::time::{Instant, SystemTime};
 
 use crate::camera::Camera;
 use crate::enums::{
-    BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, InternalFormat, Object, UniformType
+    BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, UniformType
 };
-use crate::image_processing;
 use crate::modules::keybindings::KeybindingModule;
-use crate::objects::lighting::{Light, LightCounter, LightingGenerator};
+use crate::objects::lighting::{Light, LightCounter};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
 use crate::opengl::abstractions::{ProgramSelect, Programs, ShaderProgram, Textures, Uniform, WithEbo, WithVao, WithVbo};

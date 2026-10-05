@@ -2,8 +2,6 @@ use std::{fs::{self, File}, io::{Error, Write}};
 
 use crate::enums::{ImageFormat, InternalFormat, PPMType};
 
-//use numeracy::matrices::Matrix;
-use numeracy::matrices::Matrix;
 
 use zune_jpeg;
 use zune_png::{self, zune_core::{colorspace, options::EncoderOptions}};
@@ -63,14 +61,14 @@ impl Image {
 
         let (pixels, width, height, nchannels) = match format {
             ImageFormat::JPEG => {
-                let mut decoder = zune_jpeg::JpegDecoder::new(file_bytes.clone());
+                let mut decoder = zune_jpeg::JpegDecoder::new(file_bytes);
                 let pixels = decoder.decode().unwrap();
                 let (width, height) = decoder.dimensions().unwrap();
                 let nchannels = decoder.get_output_colorspace().unwrap().num_components();
                 (pixels, width, height, nchannels)
             },
             ImageFormat::PNG  => {
-                let mut decoder = zune_png::PngDecoder::new(file_bytes.clone());
+                let mut decoder = zune_png::PngDecoder::new(file_bytes);
                 let pixels = decoder.decode().unwrap().u8().unwrap();
                 let (width, height) = decoder.get_dimensions().unwrap();
                 let nchannels = decoder.get_colorspace().unwrap().num_components();

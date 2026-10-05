@@ -2,11 +2,11 @@
 use crate::objects::lighting::LightCounter;
 use crate::opengl::gl::Gl;
 use crate::enums::{
-    DataFormat, DrawCall, DrawMode, GlError, LightSourceForm, ShaderType, UniformType
+    DataFormat, DrawMode, GlError, LightSourceForm, ShaderType, UniformType
 };
 use crate::opengl::intermediate_opengl;
 
-use crate::opengl::abstractions::{WithVao, WithVbo, programs};
+use crate::opengl::abstractions::WithVao;
 //use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};
 
 //use numeracy::matrices::Matrix;

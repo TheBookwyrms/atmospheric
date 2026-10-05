@@ -1,9 +1,9 @@
 use crate::context::Context;
-use crate::enums::{ContextError, DataFormat, DrawCall, DrawMode, LightForm, LightSourceForm, Object, UniformType};
+use crate::enums::{ContextError, DataFormat, DrawMode, LightForm, LightSourceForm, UniformType};
 //use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};
 use crate::opengl::abstractions::{WithVao, WithVbo};
 //use numeracy::matrices::Matrix;
-use numeracy::matrices::{Matrix, S1, S2};
+use numeracy::matrices::{Matrix, S2};
 use numeracy::vectors::Vector;
 
 
@@ -156,14 +156,6 @@ impl LightingGenerator{
                 ]]), DataFormat::Position3Colour3Alpha1
         );
 
-        //let (vao, vbo) = render.create_vao_vbo(
-        //    &Matrix::from_2darray([[
-        //        pos[0], pos[1], pos[2], diffuse_colour[0], diffuse_colour[1], diffuse_colour[2], 1.
-        //        ]]), DataFormat::Position3Colour3Alpha1
-        //    //&Matrix::from_vector(
-        //    //    Vector::from_vec([position, diffuse_colour].concat()).extend([1.0])
-        //    //).new_axis(), DataFormat::Position3Colour3Alpha1
-        //)?;
 
         Ok(
             PointLight {
@@ -354,21 +346,6 @@ impl PointLight {
         render.programs.draw(with_light_source_vao, DrawMode::GlPoints, &data, DataFormat::Position3Colour3Alpha1)?;
         Ok(())
     }
-    //pub fn draw(&self, render:&Context) -> Result<(), ContextError> {
-//
-    //    let with_light_source = WithObject::existing(
-    //        &render.window.opengl, Object::VAO, self.vao, DataFormat::Position3Colour3Alpha1
-    //    ).add(Object::VBO, self.vbo)?;
-//
-    //    let data = self.get_vertex_data();
-//
-    //    if (self.position != self.previous_position) || (self.diffuse_colour != self.previous_diffuse_colour) {
-    //        with_light_source.buffer_sub_data(&data, Object::VBO)?;
-    //    }
-    //    
-    //    render.programs.draw(with_light_source, DrawCall::Arrays, DrawMode::GlPoints, &data)?;
-    //    Ok(())
-    //}
 }
 
 

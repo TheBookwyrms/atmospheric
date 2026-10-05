@@ -1,4 +1,4 @@
-use crate::opengl::{gl, raw_opengl};
+use crate::opengl::gl;
 use crate::opengl::gl::Gl;
 
 use std::os::raw::c_void;

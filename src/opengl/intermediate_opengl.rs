@@ -10,7 +10,6 @@ use crate::enums::{
     TextureWrap, TextureWrapping, UniformType, UpdateVertexAttrib,
 };
 
-use core::prelude::v1;
 use std::ffi::CString;
 use std::os::raw::c_void;
 use std::slice;

@@ -23,27 +23,20 @@ use numeracy::matrices::{Matrix, S2};
 use numeracy::vectors::Vector;
 use numeracy::random::pseudo_random;
 
-use std::time::{SystemTime, UNIX_EPOCH, Duration};
 use std::f32::consts::PI;
+use std::sync::Arc;
 
 
-use atmospheric::modules::keybindings::{
-    KeybindingModule,
-    camera_movement::MouseOnlyMovement,
-    pause::PauseKeybindings,
-    screenshot::ScreenshotKeybindings,
-    window::DefaultWindowKeybindings,
-};
-
+use atmospheric::modules::keybindings::KeybindingModule;
 
 
 fn main() -> Result<(), ContextError> {
 
-    let keybinding_modules:Vec<Box<dyn KeybindingModule>> = vec![
-        Box::new(MouseOnlyMovement {}),
-        Box::new(PauseKeybindings {}),
-        Box::new(ScreenshotKeybindings {}),
-        Box::new(DefaultWindowKeybindings {}),
+    let keybinding_modules = vec![
+        KeybindingModule::MouseScroll, KeybindingModule::MousePanLeftClick, KeybindingModule::MouseRotateRightClick,
+        KeybindingModule::PauseSpace, KeybindingModule::ScreenshotCtrlK,
+        KeybindingModule::CloseWindowEscape, KeybindingModule::NecessaryWindowStuff,
+        KeybindingModule::ChangeCameraModeE,
     ];
 
     let max_lights = LightCounter::max_values(1, 10, 10);
@@ -150,7 +143,7 @@ fn main() -> Result<(), ContextError> {
 
 
     let real_instancing_object = InstancingObject::new(
-        &render.window.opengl,
+        &render.window.get_opengl_handle(),
         cube.get_position_matrix(),
         cube.get_normal_matrix(),
         //ObjectColour::None,
@@ -201,7 +194,7 @@ fn main() -> Result<(), ContextError> {
 
         render.use_program(ProgramSelect::SelectInstancingBlinnPhong, vec![point_light2.into(), point_light3.into()])?;
         
-        real_instancing_object.draw(&render.window.opengl, &mut render.textures, &render.programs)?;
+        real_instancing_object.draw(&render.window.get_opengl_handle(), &mut render.textures, &render.programs)?;
 
 
 

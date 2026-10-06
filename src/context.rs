@@ -15,12 +15,12 @@ use numeracy::matrices::{Matrix, S2, ShapeTrait};
 use glfw::WindowEvent;
 use crate::glfw::window::Window;
 
-use crate::modules::keybindings::{
-    camera_movement::MouseOnlyMovement,
-    pause::PauseKeybindings,
-    screenshot::ScreenshotKeybindings,
-    window::DefaultWindowKeybindings,
-};
+//use crate::modules::keybindings::{
+//    camera_movement::MouseOnlyMovement,
+//    pause::PauseKeybindings,
+//    screenshot::ScreenshotKeybindings,
+//    window::DefaultWindowKeybindings,
+//};
 
 
 pub struct AssortedContextDetails {
@@ -50,17 +50,18 @@ pub struct Context<'a> {
     pub camera:Camera,
     pub programs:Programs,
     pub textures:Textures<'a>,
-    pub keybinding_modules:Vec<Box<dyn KeybindingModule>>,
+    pub keybinding_modules:Vec<KeybindingModule>,
 
 
     pub assorted_details:AssortedContextDetails,
 }
 impl<'a> Context<'a> {
-    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<Box<dyn KeybindingModule>>) -> Result<Self, ContextError> {
+    //pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<Box<dyn KeybindingModule>>) -> Result<Self, ContextError> {
+    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<KeybindingModule>) -> Result<Self, ContextError> {
         let window = Window::new_opengl(window_name, window_width, window_height)?;
         let camera = Camera::new(camera_mode);
 
-        let programs = Programs::compile_all(&window.opengl, &max_lights)?;
+        let programs = Programs::compile_all(&window.get_opengl_handle(), &max_lights)?;
         let textures = Textures::new_empty();
 
         Ok(Self {
@@ -72,14 +73,13 @@ impl<'a> Context<'a> {
         let window = Window::new_opengl("window name!", 1920, 1080)?;
         let camera = Camera::new(CameraMode::Encompassing);
 
-        let programs = Programs::compile_all(&window.opengl, &max_lights)?;
+        let programs = Programs::compile_all(&window.get_opengl_handle(), &max_lights)?;
         let textures = Textures::new_empty();
 
-        let keybinding_modules:Vec<Box<dyn KeybindingModule>> = vec![
-            Box::new(MouseOnlyMovement {}),
-            Box::new(PauseKeybindings {}),
-            Box::new(ScreenshotKeybindings {}),
-            Box::new(DefaultWindowKeybindings {}),
+        let keybinding_modules = vec![
+            KeybindingModule::MouseScroll, KeybindingModule::MousePanLeftClick, KeybindingModule::MouseRotateRightClick,
+            KeybindingModule::PauseSpace, KeybindingModule::ScreenshotCtrlK,
+            KeybindingModule::CloseWindowEscape, KeybindingModule::NecessaryWindowStuff,
         ];
 
         Ok(Self {
@@ -87,7 +87,7 @@ impl<'a> Context<'a> {
             assorted_details:AssortedContextDetails::default(),
          })
     }
-    pub fn render_over(&self) -> bool { self.window.window.should_close() }
+    pub fn render_over(&self) -> bool { self.window.should_close() }
     pub fn poll_events(&mut self) { self.window.poll_events(); }
 
 
@@ -98,7 +98,7 @@ impl<'a> Context<'a> {
     }
 
     pub fn begin_render_actions(&self) -> Result<(), ContextError> {
-        self.window.clear_to_colour(self.window.background_colour, 1.0)?;
+        self.window.clear_to_colour(self.window.get_background_colour(), 1.0)?;
         self.window.clear(vec![BufferBit::ColourBufferBit, BufferBit::DepthBufferBit]);
         Ok(())
 
@@ -106,8 +106,8 @@ impl<'a> Context<'a> {
     
     pub fn end_render_actions(&mut self) -> Result<(), ContextError> {
         
-        self.textures.deactivate_all(&self.window.opengl);
-        self.programs.disuse_program(&self.window.opengl);
+        self.textures.deactivate_all(&self.window.get_opengl_handle());
+        self.programs.disuse_program(&self.window.get_opengl_handle());
 
         
         let dt = Instant::now().duration_since(self.assorted_details.current_time).as_secs_f32();
@@ -128,12 +128,12 @@ impl<'a> Context<'a> {
     pub fn create_vao_vbo_ebo<U:ShapeTrait<2>, V:ShapeTrait<2>>(&self, vertices:&Matrix<f32, 2, U>, indices:&Matrix<i32, 2, V>, format:DataFormat
     ) -> (u32, u32, u32) {
 
-        let with_vao = WithVao::new(&self.window.opengl);//, format);
+        let with_vao = WithVao::new(&self.window.get_opengl_handle());//, format);
         
-        let with_vbo = WithVbo::new(&self.window.opengl);//, format);
+        let with_vbo = WithVbo::new(&self.window.get_opengl_handle());//, format);
         with_vbo.buffer_data(vertices, DrawType::DynamicDraw);
 
-        let with_ebo = WithEbo::new(&self.window.opengl, format);
+        let with_ebo = WithEbo::new(&self.window.get_opengl_handle(), format);
         with_ebo.buffer_data(indices, DrawType::DynamicDraw);
 
         with_vao.set_vertex_attribs_per_vertex(vertices.dtype_memsize() as i32, format);
@@ -143,8 +143,8 @@ impl<'a> Context<'a> {
 
 
     pub fn create_vao_vbo<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, format:DataFormat) -> (u32, u32) {
-        let with_vao = WithVao::new(&self.window.opengl);//, format);
-        let with_vbo = WithVbo::new(&self.window.opengl);//, format);
+        let with_vao = WithVao::new(&self.window.get_opengl_handle());//, format);
+        let with_vbo = WithVbo::new(&self.window.get_opengl_handle());//, format);
 
         with_vbo.buffer_data(data, DrawType::DynamicDraw);
 
@@ -158,12 +158,12 @@ impl<'a> Context<'a> {
     //pub fn create_vao_vbo_ebo<U:ShapeTrait<2>, V:ShapeTrait<2>>(&self, vertices:&Matrix<f32, 2, U>, indices:&Matrix<i32, 2, V>, format:DataFormat
     //) -> Result<(u32, u32, u32), ContextError> {
 //
-    //    let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
+    //    let with_vao = WithObject::new(&self.window.get_opengl_handle(), Object::VAO, format);
     //    
-    //    let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
+    //    let with_vbo = WithObject::new(&self.window.get_opengl_handle(), Object::VBO, format);
     //    with_vbo.buffer_data(vertices, DrawType::DynamicDraw, Object::VBO)?;
 //
-    //    let with_ebo = WithObject::new(&self.window.opengl, Object::EBO, format);
+    //    let with_ebo = WithObject::new(&self.window.get_opengl_handle(), Object::EBO, format);
     //    with_ebo.buffer_data(indices, DrawType::DynamicDraw, Object::EBO)?;
 //
     //    with_vao.set_vertex_attribs(vertices.dtype_memsize() as i32)?;
@@ -173,8 +173,8 @@ impl<'a> Context<'a> {
 //
 //
     //pub fn create_vao_vbo<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, format:DataFormat) -> Result<(u32, u32), ContextError> {
-    //    let with_vao = WithObject::new(&self.window.opengl, Object::VAO, format);
-    //    let with_vbo = WithObject::new(&self.window.opengl, Object::VBO, format);
+    //    let with_vao = WithObject::new(&self.window.get_opengl_handle(), Object::VAO, format);
+    //    let with_vbo = WithObject::new(&self.window.get_opengl_handle(), Object::VBO, format);
 //
     //    with_vbo.buffer_data(data, DrawType::DynamicDraw, Object::VBO)?;
 //
@@ -185,11 +185,11 @@ impl<'a> Context<'a> {
 
 
     pub fn set_custom_uniform<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, program_id:u32, uniform:Uniform, value:Matrix<T, N, U>) -> Result<(), GlError> {
-        intermediate_opengl::set_uniform(&self.window.opengl, program_id, uniform.name, uniform.uniform_type, value.as_ptr())
+        intermediate_opengl::set_uniform(&self.window.get_opengl_handle(), program_id, uniform.name, uniform.uniform_type, value.as_ptr())
     }
 
     pub fn use_custom_program(&mut self, shader:ShaderProgram) -> Result<(), GlError> {
-        self.programs.use_program(&self.window.opengl, ProgramSelect::Custom(shader))
+        self.programs.use_program(&self.window.get_opengl_handle(), ProgramSelect::Custom(shader))
     }
 
 
@@ -198,7 +198,7 @@ impl<'a> Context<'a> {
     /// if there are no lights needed, pass empty vec \
     pub fn use_program(&mut self, program_type:ProgramSelect, lights:Vec<Light>) -> Result<(), ContextError> {
 
-        self.programs.use_program(&self.window.opengl, program_type)?;
+        self.programs.use_program(&self.window.get_opengl_handle(), program_type)?;
 
         match program_type {
             ProgramSelect::SelectSimpleOrthographic => {
@@ -239,7 +239,7 @@ impl<'a> Context<'a> {
         
         let model_transform = Matrix::opengl_to_right_handed().matmul(&transform);
 
-        self.programs.set_uniform(&self.window.opengl, "world_transform",
+        self.programs.set_uniform(&self.window.get_opengl_handle(), "world_transform",
             UniformType::Mat4, model_transform)?;
         
         Ok(())
@@ -252,13 +252,13 @@ impl<'a> Context<'a> {
         self.set_world_transform_uniform(Matrix::identity())?;
 
         // view
-        self.programs.set_uniform(&self.window.opengl, "camera_transformation", UniformType::Mat4,
+        self.programs.set_uniform(&self.window.get_opengl_handle(), "camera_transformation", UniformType::Mat4,
             //self.camera.get_camera_transform()?)?;
             self.camera.get_camera_view_matrix()?)?;
 
         // projection
-        self.programs.set_uniform(&self.window.opengl, "orthographic_projection", UniformType::Mat4,
-            self.camera.get_orthographic_projection(self.window.aspect_ratio))?;
+        self.programs.set_uniform(&self.window.get_opengl_handle(), "orthographic_projection", UniformType::Mat4,
+            self.camera.get_orthographic_projection(self.window.get_aspect_ratio()))?;
 
         Ok(())
     }
@@ -270,9 +270,9 @@ impl<'a> Context<'a> {
 
 
             
-        self.programs.set_uniform(&self.window.opengl,"camera_viewpos", UniformType::Vec3,
+        self.programs.set_uniform(&self.window.get_opengl_handle(),"camera_viewpos", UniformType::Vec3,
             Matrix::from_vector(
-                self.camera.camera_info_matrix.get_camera(CameraVector::Position)
+                self.camera.camera_info.get_camera(CameraVector::Position)
             ))?;
 
 
@@ -285,13 +285,15 @@ impl<'a> Context<'a> {
 
     fn poll_and_perform_polled_events(&mut self) -> Result<(), ContextError> {
         self.poll_events();
-        let events = glfw::flush_messages(&self.window.events).map(|(_, e)| e).collect::<Vec<WindowEvent>>();
-        let keybindings = &self.keybinding_modules;
-        for event in events {
-            for module in keybindings {
-                module.call_keybindings(&event, &mut self.window, &mut self.camera, &mut self.assorted_details)?;
+        let modules = &self.keybinding_modules.clone();
+        for event in self.window.flush_messages() {
+            for module in modules {
+                module.keybinding_callback(&event, self)?;
             }
         }
+
+        self.window.set_last_cursor_pos(self.window.get_cursor_pos());
+
         Ok(())
     }
 }

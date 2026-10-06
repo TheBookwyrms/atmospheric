@@ -64,7 +64,7 @@ fn main() -> Result<(), ContextError> {
 
 
     let prepared_bluefaces = TextureSetup::get(
-            &render.window.opengl, TextureTarget::Texture2D,
+            &render.window.get_opengl_handle(), TextureTarget::Texture2D,
             bluefaces)
             .set_texture_image_and_mipmap(0)
             .set_filters(TextureMinFilter::LinearMipmapNearest, TextureMagFilter::Linear)
@@ -72,7 +72,7 @@ fn main() -> Result<(), ContextError> {
             .get_prepared_texture()?;
 
     let prepared_awesomeface = TextureSetup::get(
-            &render.window.opengl, TextureTarget::Texture2D,
+            &render.window.get_opengl_handle(), TextureTarget::Texture2D,
             awesomeface)
             .set_texture_image_and_mipmap(0)
             .set_filters(TextureMinFilter::LinearMipmapNearest, TextureMagFilter::Linear)
@@ -92,13 +92,13 @@ fn main() -> Result<(), ContextError> {
 
         
         &render.textures.activate(
-            &render.window.opengl, OpenglTexture::Texture0, &prepared_bluefaces, &render.programs
+            &render.window.get_opengl_handle(), OpenglTexture::Texture0, &prepared_bluefaces, &render.programs
         )?;
         &render.textures.activate(
-            &render.window.opengl, OpenglTexture::Texture1, &prepared_awesomeface, &render.programs
+            &render.window.get_opengl_handle(), OpenglTexture::Texture1, &prepared_awesomeface, &render.programs
         )?;
     
-        let with_relevant = WithObject::existing(&render.window.opengl, enums::Object::VAO, tex_vao, DataFormat::Position3Texture2)
+        let with_relevant = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, tex_vao, DataFormat::Position3Texture2)
                                                         .add(enums::Object::EBO, tex_ebo)?;
         render.programs.draw(with_relevant, DrawCall::Elements, DrawMode::GlTriangles, &triangle_indices)?;
 

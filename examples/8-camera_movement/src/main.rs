@@ -122,7 +122,7 @@ fn main() -> Result<(), ContextError> {
 
 
     let prepared_bluefaces = TextureSetup::get(
-            &render.window.opengl, TextureTarget::Texture2D,
+            &render.window.get_opengl_handle(), TextureTarget::Texture2D,
             bluefaces
             //bluefaces.width, bluefaces.height, bluefaces.pixels, bluefaces.format.into()
         )
@@ -132,7 +132,7 @@ fn main() -> Result<(), ContextError> {
         .set_st_wrapping(TextureWrapping::MirroredRepeat, TextureWrapping::MirroredRepeat)
         .get_prepared_texture()?;
     let prepared_ppm = TextureSetup::get(
-            &render.window.opengl, TextureTarget::Texture2D,
+            &render.window.get_opengl_handle(), TextureTarget::Texture2D,
             ppm
             //bluefaces.width, bluefaces.height, bluefaces.pixels, bluefaces.format.into()
         )
@@ -143,7 +143,7 @@ fn main() -> Result<(), ContextError> {
         .get_prepared_texture()?;
 
     let prepared_awesomeface = TextureSetup::get(
-            &render.window.opengl, TextureTarget::Texture2D,
+            &render.window.get_opengl_handle(), TextureTarget::Texture2D,
             awesomeface
             //bluefaces.width, bluefaces.height, bluefaces.pixels, bluefaces.format.into()
         )
@@ -164,11 +164,11 @@ fn main() -> Result<(), ContextError> {
 
         
         //render.use_program(ProgramSelect::SelectSimpleOrthographic);
-        //let with_relevant = WithObject::existing(&render.window.opengl, opengl::enums::Object::VAO, c_vao, DataFormat::Position3Colour3Alpha1);
+        //let with_relevant = WithObject::existing(&render.window.get_opengl_handle(), opengl::enums::Object::VAO, c_vao, DataFormat::Position3Colour3Alpha1);
         //render.programs.draw(with_relevant, DrawCall::Arrays, DrawMode::GlTriangles, &cube)?;
 
         //render.use_program(ProgramSelect::SelectBlinnPhongOrthographic);
-        //let with_relevant = WithObject::existing(&render.window.opengl, opengl::enums::Object::VAO, t_vao, DataFormat::Position3Colour3Alpha1Normal3);
+        //let with_relevant = WithObject::existing(&render.window.get_opengl_handle(), opengl::enums::Object::VAO, t_vao, DataFormat::Position3Colour3Alpha1Normal3);
         //render.programs.draw(with_relevant, DrawCall::Arrays, DrawMode::GlTriangles, &triangle)?;
 
         //render.use_program(ProgramSelect::SelectSimpleTexture);
@@ -179,16 +179,16 @@ fn main() -> Result<(), ContextError> {
 
         
         &render.textures.activate(
-            &render.window.opengl, OpenglTexture::Texture0, &prepared_bluefaces, &render.programs
+            &render.window.get_opengl_handle(), OpenglTexture::Texture0, &prepared_bluefaces, &render.programs
         )?;
         //&render.textures.activate(
-        //    &render.window.opengl, OpenglTexture::Texture1, &prepared_ppm, &render.programs
+        //    &render.window.get_opengl_handle(), OpenglTexture::Texture1, &prepared_ppm, &render.programs
         //)?;
         &render.textures.activate(
-            &render.window.opengl, OpenglTexture::Texture1, &prepared_awesomeface, &render.programs
+            &render.window.get_opengl_handle(), OpenglTexture::Texture1, &prepared_awesomeface, &render.programs
         )?;
     
-        //let with_relevant = WithObject::existing(&render.window.opengl, enums::Object::VAO, tex_vao, DataFormat::Position3Texture2)
+        //let with_relevant = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, tex_vao, DataFormat::Position3Texture2)
         //                                                .add(enums::Object::EBO, tex_ebo)?;
         //                                                //.add(opengl::enums::Object::Texture2D, texture_id)?;
         //render.programs.draw(with_relevant, DrawCall::Elements, DrawMode::GlTriangles, &triangle_indices)?;
@@ -202,17 +202,17 @@ fn main() -> Result<(), ContextError> {
          render.use_program(ProgramSelect::SelectSimpleOrthographic)?;
 
         // origin, x, y, and z points
-        let with_zero = WithObject::existing(&render.window.opengl, enums::Object::VAO, zero_vao, DataFormat::Position3Colour3Alpha1);
+        let with_zero = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, zero_vao, DataFormat::Position3Colour3Alpha1);
         render.programs.draw(with_zero, DrawCall::Arrays, DrawMode::GlPoints, &zero)?;
-        let with_x = WithObject::existing(&render.window.opengl, enums::Object::VAO, x_vao, DataFormat::Position3Colour3Alpha1);
+        let with_x = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, x_vao, DataFormat::Position3Colour3Alpha1);
         render.programs.draw(with_x, DrawCall::Arrays, DrawMode::GlPoints, &x)?;
-        let with_y = WithObject::existing(&render.window.opengl, enums::Object::VAO, y_vao, DataFormat::Position3Colour3Alpha1);
+        let with_y = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, y_vao, DataFormat::Position3Colour3Alpha1);
         render.programs.draw(with_y, DrawCall::Arrays, DrawMode::GlPoints, &y)?;
-        let with_z = WithObject::existing(&render.window.opengl, enums::Object::VAO, z_vao, DataFormat::Position3Colour3Alpha1);
+        let with_z = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, z_vao, DataFormat::Position3Colour3Alpha1);
         render.programs.draw(with_z, DrawCall::Arrays, DrawMode::GlPoints, &z)?;
-         let with_target = WithObject::existing(&render.window.opengl, enums::Object::VAO, target_vao, DataFormat::Position3Colour3Alpha1)
+         let with_target = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, target_vao, DataFormat::Position3Colour3Alpha1)
                  .add(Object::VBO, target_vbo)?;
-         //let with_target_vbo = WithObject::existing(&render.window.opengl, enums::Object::VBO, target_vbo, DataFormat::Position3Colour3Alpha1);
+         //let with_target_vbo = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VBO, target_vbo, DataFormat::Position3Colour3Alpha1);
          //let data = target_to_matrix(render.camera.camera_target.clone(), (1.0, 1.0, 1.0), 1.0);
          //with_target.buffer_sub_data(&data, Object::VBO)?;
          //println!("p {:?}, t {:?}", render.camera.camera_position, data);
@@ -223,14 +223,14 @@ fn main() -> Result<(), ContextError> {
         //render.camera.camera_position[2] = -20.0;
 
          // cube 1
-         let with_cube = WithObject::existing(&render.window.opengl, enums::Object::VAO, c_vao, DataFormat::Position3Colour3Alpha1);
+         let with_cube = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, c_vao, DataFormat::Position3Colour3Alpha1);
          render.programs.draw(with_cube, DrawCall::Arrays, DrawMode::GlTriangles, &cube)?;
          
          // cube 2
          let tr = Matrix::translate(Vector::from_1darray([-16.0, 0.0, 0.0]));
-         render.programs.set_uniform(&render.window.opengl, "world_transform", UniformType::Mat4,
+         render.programs.set_uniform(&render.window.get_opengl_handle(), "world_transform", UniformType::Mat4,
              Matrix::opengl_to_right_handed().matmul(&tr).unwrap())?;
-         let with_cube = WithObject::existing(&render.window.opengl, enums::Object::VAO, c_vao, DataFormat::Position3Colour3Alpha1);
+         let with_cube = WithObject::existing(&render.window.get_opengl_handle(), enums::Object::VAO, c_vao, DataFormat::Position3Colour3Alpha1);
          render.programs.draw(with_cube, DrawCall::Arrays, DrawMode::GlTriangles, &cube)?;
 
         let a = (render.window.get_time_since_glfw_init().sin()/10.) as f32;

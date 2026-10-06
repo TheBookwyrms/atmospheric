@@ -271,31 +271,31 @@ pub struct PointLight {
 impl PointLight {
     pub fn set_lighting_uniforms(&self, context:&Context) -> Result<(), ContextError> {
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("point_lights[{}].position", self.point_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.position])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("point_lights[{}].ambient_colour", self.point_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.ambient_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("point_lights[{}].diffuse_colour", self.point_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.diffuse_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("point_lights[{}].specular_colour", self.point_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.specular_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("point_lights[{}].attenuation_factor", self.point_light_index),
             UniformType::Float,
             Matrix::from_2darray([[self.attenuation.get_attenuation_factor()]])
@@ -332,7 +332,7 @@ impl PointLight {
         }
     }
     pub fn draw(&self, render:&Context) -> Result<(), ContextError> {
-        let opengl = &render.window.opengl;
+        let opengl = &render.window.get_opengl_handle();
 
         let with_light_source_vao = WithVao::existing(opengl, self.vao);//, DataFormat::Position3Colour3Alpha1);
         let with_light_source_vbo = WithVbo::existing(opengl, self.vbo);//, DataFormat::Position3Colour3Alpha1);
@@ -363,25 +363,25 @@ pub struct DirectionalLight {
 impl DirectionalLight {
     pub fn set_lighting_uniforms(&self, context:&Context) -> Result<(), ContextError> {
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("directional_lights[{}].direction", self.directional_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.direction])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("directional_lights[{}].ambient_colour", self.directional_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.ambient_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("directional_lights[{}].diffuse_colour", self.directional_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.diffuse_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("directional_lights[{}].specular_colour", self.directional_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.specular_colour])
@@ -417,49 +417,49 @@ pub struct SpotLight {
 impl SpotLight {
     pub fn set_lighting_uniforms(&self, context:&Context) -> Result<(), ContextError> {
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].position", self.spot_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.position])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].direction", self.spot_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.direction])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].ambient_colour", self.spot_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.ambient_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].diffuse_colour", self.spot_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.diffuse_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].specular_colour", self.spot_light_index),
             UniformType::Vec3,
             Matrix::from_2darray([self.specular_colour])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].inner_cutoff_angle", self.spot_light_index),
             UniformType::Float,
             Matrix::from_2darray([[self.cos_of_inner_cutoff_angle]])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].outer_cutoff_angle", self.spot_light_index),
             UniformType::Float,
             Matrix::from_2darray([[self.cos_of_outer_cutoff_angle]])
         )?;
         context.programs.set_uniform(
-            &context.window.opengl,
+            &context.window.get_opengl_handle(),
             &format!("spot_lights[{}].attenuation_factor", self.spot_light_index),
             UniformType::Float,
             Matrix::from_2darray([[self.attenuation.get_attenuation_factor()]])

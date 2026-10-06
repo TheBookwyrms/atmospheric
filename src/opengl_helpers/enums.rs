@@ -387,10 +387,21 @@ impl Into<ImageFormat> for PPMType {
     }
 }
 
-#[derive(Clone, Copy)]
+
+#[derive(Debug, Clone, Copy)]
 pub enum CameraMode {
     Encompassing,
     PointOfView,
+}
+impl CameraMode {
+    pub fn default(&self) -> (f32, f32, f32) {
+        match self {
+            Self::Encompassing => (0.0075, 0.0025, 20.0 ),
+            Self::PointOfView  => (0.1   , 0.05  ,  0.75),
+        }
+    }
+    pub(crate) fn default_encompassing()  -> (f32, f32, f32) { (0.0075, 0.0025, 20.0  ) }
+    pub(crate) fn default_point_of_view() -> (f32, f32, f32) { (0.1   , 0.05  , 0.75 ) }
 }
 
 pub enum CameraAxis {

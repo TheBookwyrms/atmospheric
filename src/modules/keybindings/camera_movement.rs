@@ -1,62 +1,92 @@
-use crate::camera::Camera;
-use crate::context::AssortedContextDetails;
-use crate::glfw::window::Window;
-use crate::modules::keybindings::KeybindingModule;
+use crate::context::Context;
 use crate::enums::ContextError;
 use glfw::{WindowEvent, Action};
 
+pub(crate) fn mouse_scroll_callback(event:&WindowEvent, render:&mut Context) -> Result<(), ContextError> {
+    match event {
+        WindowEvent::Scroll(_xoffset, yoffset) => {
+            // z = z - 0.24*y*z*0.25
+            // z = z*(1-0.06*y)
+            render.camera.offset_zoom(-0.06 * *yoffset as f32 * render.camera.get_zoom());
+            //render.camera.offset_zoom(-1.0*((0.24*yoffset) as f32) * render.camera.get_zoom()*0.25);
+            //render.camera.get_zoom() -= ((0.24*yoffset) as f32) * render.camera.get_zoom()*0.25
+        },
+        _ => {},
+    }
+    Ok(())
+}
 
-pub struct MouseOnlyMovement {}
-impl KeybindingModule for MouseOnlyMovement {
-    fn call_keybindings(&self, event:&WindowEvent, window:&mut Window, camera:&mut Camera, _:&mut AssortedContextDetails) -> Result<(), ContextError> {
-        match event {
-            WindowEvent::MouseButton(button, action, _mods) => {
-                match action {
-                    Action::Press => {
-                        match button {
-                            glfw::MouseButton::Button1 => {camera.panning = true}, // left button
-                            glfw::MouseButton::Button2 => {camera.angling = true}, // right button
-                            _ => {},
-                        }
-                    },
-                    Action::Release => {
-                        match button {
-                            glfw::MouseButton::Button1 => {camera.panning = false}, // left button
-                            glfw::MouseButton::Button2 => {camera.angling = false}, // right button
-                            _ => {},
-                        }
-                    },
-                    Action::Repeat => {},
-                };
-                Ok::<(), ContextError>(())
-            },
+pub(crate) fn mouse_pan_left_click(event:&WindowEvent, render:&mut Context) -> Result<(), ContextError> {
+    match event {
+        WindowEvent::MouseButton(button, action, _mods) => {
+            match action {
+                Action::Press => {
+                    match button {
+                        glfw::MouseButton::Button1 => {render.camera.panning = true}, // left button
+                        _ => {},
+                    }
+                },
+                Action::Release => {
+                    match button {
+                        glfw::MouseButton::Button1 => {render.camera.panning = false}, // left button
+                        _ => {},
+                    }
+                },
+                Action::Repeat => {},
+            };
+            Ok::<(), ContextError>(())
+        },
 
-            WindowEvent::Scroll(_xoffset, yoffset) => {
-                {camera.zoom -= ((0.24*yoffset) as f32) * camera.zoom*0.25; Ok(())}
-            },
+        WindowEvent::CursorPos(xpos, ypos) => {
+            let last_cursor_pos = render.window.get_last_cursor_pos();
+            let dx = *xpos as f32 - last_cursor_pos[0];
+            let dy = *ypos as f32 - last_cursor_pos[1];
 
-            WindowEvent::CursorPos(xpos, ypos) => {
-                let dx = *xpos as f32 - window.last_cursor_pos[0];
-                let dy = *ypos as f32 - window.last_cursor_pos[1];
-
-                if camera.panning {
-                    let sensitivity = camera.pan_sensitivity * camera.zoom;
-                    camera.translation_by_internal_axes(0.0, -dx*sensitivity, dy*sensitivity)?;
-                    //camera.pan_xyz += Vector::from_1darray([dx, -1.0*dy, 0.0])
-                    //                                .multiply_by_constant(sensitivity);
-                }
-                if camera.angling {
-                    let sensitivity = camera.angle_sensitivity * camera.zoom;
-                    camera.translate_relative_to_the_target(0.0, -dx*sensitivity, dy*sensitivity)?;
-                    //camera.angle_xyz += Vector::from_1darray([dy, dx, 0.0])
-                    //                                .multiply_by_constant(sensitivity);
-                }
-
-                window.last_cursor_pos = [*xpos as f32, *ypos as f32];
-
-                Ok(())
+            if render.camera.panning {
+                let sensitivity = render.camera.get_pan_sensitivity() * render.camera.get_zoom();
+                render.camera.translation_by_internal_axes(0.0, -dx*sensitivity, dy*sensitivity)?;
             }
-            _ => Ok(()),
+
+            Ok(())
         }
+        _ => Ok(()),
+    }
+}
+
+pub(crate) fn mouse_rotate_right_click(event:&WindowEvent, render:&mut Context) -> Result<(), ContextError> {
+    match event {
+        WindowEvent::MouseButton(button, action, _mods) => {
+            match action {
+                Action::Press => {
+                    match button {
+                        glfw::MouseButton::Button2 => {render.camera.angling = true}, // right button
+                        _ => {},
+                    }
+                },
+                Action::Release => {
+                    match button {
+                        glfw::MouseButton::Button2 => {render.camera.angling = false}, // right button
+                        _ => {},
+                    }
+                },
+                Action::Repeat => {},
+            };
+            Ok::<(), ContextError>(())
+        },
+
+
+        WindowEvent::CursorPos(xpos, ypos) => {
+            let last_cursor_pos = render.window.get_last_cursor_pos();
+            let dx = *xpos as f32 - last_cursor_pos[0];
+            let dy = *ypos as f32 - last_cursor_pos[1];
+
+            if render.camera.angling {
+                let sensitivity = render.camera.get_angle_sensitivity() * render.camera.get_zoom();
+                render.camera.translate_relative_to_the_target(0.0, -dx*sensitivity, dy*sensitivity)?;
+            }
+
+            Ok(())
+        }
+        _ => Ok(()),
     }
 }

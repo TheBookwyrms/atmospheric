@@ -9,13 +9,13 @@ use glfw::fail_on_errors;
 
 
 pub struct Window {
-    pub glfw : Glfw,
-    pub window : PWindow,
-    pub events : GlfwReceiver<(f64, WindowEvent)>,
+    glfw : Glfw,
+    window : PWindow,
+    events : GlfwReceiver<(f64, WindowEvent)>,
     pub opengl : Gl,
-    pub last_cursor_pos : [f32; 2],
-    pub aspect_ratio : f32,
-    pub background_colour : (f32, f32, f32),
+    last_cursor_pos : [f32; 2],
+    aspect_ratio : f32,
+    background_colour : [f32; 3],
 }
 
 impl Window {
@@ -37,7 +37,7 @@ impl Window {
                                 opengl,
                                 last_cursor_pos:[0.0, 0.0],
                                 aspect_ratio:width as f32 / height as f32, 
-                                background_colour:(0.5, 0.5, 0.5),
+                                background_colour:[0.5, 0.5, 0.5],
                             }
                         )
                     },
@@ -52,17 +52,21 @@ impl Window {
     pub fn poll_events(&mut self)  { self.glfw.poll_events(); }
     pub fn get_time_since_glfw_init(&self) -> f64 { self.glfw.get_time()}
 
-    pub fn set_polling(&mut self)  { self.window.set_all_polling(true); }
-    pub fn swap_buffers(&mut self) { self.window.swap_buffers(); }
-    pub fn make_current(&mut self) { self.window.make_current(); }
+    pub fn set_polling(&mut self)  { self.window.set_all_polling(true) }
+    pub fn swap_buffers(&mut self) { self.window.swap_buffers() }
+    pub fn make_current(&mut self) { self.window.make_current() }
+    pub fn set_should_close(&mut self, value:bool) { self.window.set_should_close(value) }
+    pub fn should_close(&self) -> bool { self.window.should_close() }
+    pub fn iconify(&mut self) { self.window.iconify() }
+
     pub fn width(&self) -> i32 { self.window.get_size().0 }
     pub fn height(&self) -> i32 { self.window.get_size().1 }
     /// gets (width, height) of window, converted to usize
     pub fn wh_usize(&self) -> (usize, usize) { let wh = self.window.get_size(); (wh.0 as usize, wh.1 as usize) }
 
     pub fn clear(&self, masks:Vec<BufferBit>) { opengl::intermediate_opengl::clear(&self.opengl, masks) }
-    pub fn clear_to_colour(&self, rgb:(f32, f32, f32), a:f32) -> Result<(), GlError> {
-        opengl::intermediate_opengl::clear_colour(&self.opengl, rgb.0, rgb.1, rgb.2, a)
+    pub fn clear_to_colour(&self, rgb:[f32; 3], a:f32) -> Result<(), GlError> {
+        opengl::intermediate_opengl::clear_colour(&self.opengl, rgb[0], rgb[1], rgb[2], a)
     }    
 
     pub fn default_gl_settings(&self) {
@@ -74,6 +78,23 @@ impl Window {
 
     pub fn read_pixels_full_window(&self, opengl:&Gl, colour_format:InternalFormat) -> Vec<u8> {
         intermediate_opengl::read_pixels(opengl, 0, 0, self.width(), self.height(), colour_format)
+    }
+
+    pub fn get_cursor_pos(&self) -> [f32; 2] {
+        let pos = self.window.get_cursor_pos();
+        [pos.0 as f32, pos.1 as f32]
+    }
+    pub fn get_last_cursor_pos(&self) -> [f32; 2] { self.last_cursor_pos }
+    pub fn set_last_cursor_pos(&mut self, last:[f32; 2]) { self.last_cursor_pos = last }
+    pub fn get_aspect_ratio(&self) -> f32 { self.aspect_ratio }
+    pub fn set_aspect_ratio(&mut self, ratio:f32) { self.aspect_ratio = ratio }
+    pub fn get_background_colour(&self) -> [f32; 3] { self.background_colour }
+    pub fn set_background_colour(&mut self, colour:[f32; 3]) { self.background_colour = colour }
+    pub fn get_opengl_handle(&self) -> &Gl { &self.opengl }
+
+    pub fn flush_messages(&self) -> Vec<WindowEvent> {
+        glfw::flush_messages(&self.events).map(|(_, e)| e).collect::<Vec<WindowEvent>>()
+
     }
 }
 

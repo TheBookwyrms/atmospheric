@@ -9,8 +9,6 @@ use crate::enums::{
 };
 use crate::opengl::intermediate_opengl;
 
-use crate::opengl::abstractions::Programs;
-
 //use numeracy::matrices::Matrix;
 use numeracy::matrices::Matrix;
 

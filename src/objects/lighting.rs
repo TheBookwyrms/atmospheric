@@ -12,7 +12,7 @@ use numeracy::vectors::Vector;
 
 
 
-
+#[derive(Debug, Clone)]
 pub struct Light {
     point       : Option<PointLight>,
     spot        : Option<SpotLight>,
@@ -57,7 +57,7 @@ impl From<DirectionalLight> for Light {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct LightCounter {
     directional_lights:u16,
     point_lights:u16,
@@ -231,7 +231,7 @@ impl LightingGenerator{
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 /// attenuation factor = a/(a-d^2)
 /// where d = light position - fragment position
 /// and a = p^2 * f/(1-f)
@@ -254,7 +254,7 @@ impl Attenuation {
 }
 
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct PointLight {
     position:[f32; 3],
     
@@ -352,7 +352,7 @@ impl PointLight {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct DirectionalLight {
     pub direction:[f32; 3],
     
@@ -394,7 +394,7 @@ impl DirectionalLight {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct SpotLight {
     pub position:[f32; 3],
     pub direction:[f32; 3],

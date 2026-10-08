@@ -10,7 +10,7 @@ use crate::modules::shaders::{ShaderModule, Shaders};
 use crate::objects::lighting::{Light, LightCounter};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
-use crate::opengl::abstractions::{ProgramSelect, Programs, ShaderProgram, Textures, Uniform, WithEbo, WithVao, WithVbo};
+use crate::opengl::abstractions::{Textures, Uniform, WithEbo, WithVao, WithVbo};
 
 use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
@@ -80,7 +80,6 @@ impl<'a> Context<'a> {
         let window = Window::new_opengl("window name!", 1920, 1080)?;
         let camera = Camera::new(CameraMode::Encompassing);
 
-        let programs = Programs::compile_all(&window.get_opengl_handle(), &max_lights)?;
         let textures = Textures::new_empty();
 
         let keybindings = Keybindings::using(vec![

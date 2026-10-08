@@ -9,7 +9,7 @@ use atmospheric::enums::{
     CameraMode, ContextError, ImageFormat, LightForm,
     ObjectColour, ObjectMaterials, ObjectTexture
 };
-use atmospheric::modules::shaders::ShaderModule;
+use atmospheric::modules::shaders::{INSTANCING_BLINN_PHONG_FRAGMENT, INSTANCING_BLINN_PHONG_VERTEX, ShaderModule, ShaderText};
 use atmospheric::objects::lighting::Light;
 use atmospheric::objects::{
     lighting::{LightCounter, LightingGenerator},
@@ -17,7 +17,6 @@ use atmospheric::objects::{
     cube::Cube,
 };
 use atmospheric::materials::Material;
-use atmospheric::opengl::abstractions::ProgramSelect;
 use atmospheric::context::Context;
 
 use numeracy::matrices::{Matrix, S2};
@@ -33,6 +32,8 @@ use atmospheric::modules::keybindings::{KeybindingModule, Keybindings};
 
 fn main() -> Result<(), ContextError> {
 
+    let custom = ShaderModule::Custom(ShaderText::text(INSTANCING_BLINN_PHONG_VERTEX, INSTANCING_BLINN_PHONG_FRAGMENT));
+
     let keybinding_modules = vec![
         KeybindingModule::CameraZoomScroll, KeybindingModule::CameraPanLeftClick, KeybindingModule::CameraRotateRightClick,
         KeybindingModule::PauseSpace, KeybindingModule::ScreenshotCtrlK,
@@ -42,12 +43,13 @@ fn main() -> Result<(), ContextError> {
     ];
 
     let shader_modules = vec![
-        ShaderModule::InstancingBlinnPhong,
+        //ShaderModule::InstancingBlinnPhong,
         ShaderModule::PhongOrthographic,
         ShaderModule::PhongTexture,
         ShaderModule::SimpleOrthographic,
         ShaderModule::SimpleTexture,
         ShaderModule::TwoTexture,
+        custom
     ];
 
     let max_lights = LightCounter::max_values(1, 10, 10);
@@ -161,8 +163,15 @@ fn main() -> Result<(), ContextError> {
         spot_light.rotate([0., -0.75, 0.])?;
 
         
+        let a = vec![point_light2.into(), point_light3.into()];
+        render.use_program(custom, a.clone())?;
 
-        render.use_program(ShaderModule::InstancingBlinnPhong, vec![point_light2.into(), point_light3.into()])?;
+                render.shaders.set_orthographic_camera_uniforms(&render.window, &render.camera)?;
+                render.shaders.set_blinn_phong_uniforms(&render.window, &render.camera)?;
+                for light in a {
+                    light.set_lighting_uniforms(&render.window, &render.shaders)?
+                }
+        //render.use_program(ShaderModule::InstancingBlinnPhong, vec![point_light2.into(), point_light3.into()])?;
         
         real_instancing_object.draw(&render.window.get_opengl_handle(), &mut render.textures, &render.shaders)?;
 

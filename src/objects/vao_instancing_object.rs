@@ -9,7 +9,7 @@ use crate::enums::{
     OpenglTexture, UpdateVertexAttrib::{PerInstance, PerVertex},
     ObjectColour, ObjectMaterials, ObjectTexture
 };
-use crate::opengl::abstractions::{PreparedTexture, Programs, TextureSetup, Textures, WithVao, WithVbo};
+use crate::opengl::abstractions::{PreparedTexture, TextureSetup, Textures, WithVao, WithVbo};
 use crate::opengl::gl::Gl;
 
 use std::sync::LazyLock;

@@ -226,6 +226,9 @@ impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<'
 
         with_vao.draw_instanced(DrawMode::GlTriangles, &self.position_matrix, self.transformation_matrices.len().try_into().unwrap());
     
+        textures.deactivate(opengl, OpenglTexture::Texture0)?;
+        textures.deactivate(opengl, OpenglTexture::Texture1)?;
+
         Ok(())
     }
 }

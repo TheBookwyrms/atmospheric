@@ -27,17 +27,18 @@ use std::f32::consts::PI;
 use std::sync::Arc;
 
 
-use atmospheric::modules::keybindings::KeybindingModule;
+use atmospheric::modules::keybindings::{KeybindingModule, Keybindings};
 
 
 fn main() -> Result<(), ContextError> {
 
-    let keybinding_modules = vec![
-        KeybindingModule::MouseScroll, KeybindingModule::MousePanLeftClick, KeybindingModule::MouseRotateRightClick,
+    let keybinding_modules = Keybindings::using(vec![
+        KeybindingModule::CameraZoomScroll, KeybindingModule::CameraPanLeftClick, KeybindingModule::CameraRotateRightClick,
         KeybindingModule::PauseSpace, KeybindingModule::ScreenshotCtrlK,
         KeybindingModule::CloseWindowEscape, KeybindingModule::NecessaryWindowStuff,
         KeybindingModule::ChangeCameraModeE,
-    ];
+        KeybindingModule::CameraPanWASD, KeybindingModule::CameraRotateUpDownLeftRight,
+    ]);
 
     let max_lights = LightCounter::max_values(1, 10, 10);
     let mut lighting_generator = LightingGenerator::init(&max_lights);
@@ -91,47 +92,6 @@ fn main() -> Result<(), ContextError> {
         colour_matrices[i] = Matrix::from_2darray([[cx, cy, cz, ca]]);
 
 
-        // //println!("{}, {}, {}, {}", tx, ty, tz, rx);
-        // //println!("{}", &translate.clone().transpose());
-        // //println!("{}", Matrix::rotate_about_x_axis(rx));
-        // //println!("{}", translate.transpose().matmul(&Matrix::rotate_about_x_axis(rx)));
-        // //panic!();
-        // let translate_transposed = translate.clone().transpose();
-        // let rotate_transposed = rotate.clone().transpose();
-// 
-// // 
-// // 
-        // // //let t_r = translate.matmul(&rotate)?; // NOPE
-        // //let t_r = rotate.matmul(&translate)?; // NOPE
-        // // WRONG TRANSLATION let t_r = translate_transposed.matmul(&rotate);
-        // let t_r = rotate.matmul(&translate_transposed);
-        // //println!("{}", t_r);
-        // //let t_r = translate.matmul(&rotate_transposed)?; // NOPE
-        // //let t_r = rotate_transposed.matmul(&translate)?; // NOPE
-        // // WRONG TRANSLATION let t_r = translate_transposed.matmul(&rotate_transposed); println!("{}", t_r);
-        // let t_r = rotate_transposed.matmul(&translate_transposed);
-        // //println!("{:?}", vec![tx, ty, tz]);
-        // //println!("{}", Vector::from_1darray([rx, ry, rz])*(PI/180.));
-        // //println!("{}", Matrix::rotate_about_x_axis(rx));
-        // //println!("{}", Matrix::rotate_about_y_axis(ry));
-        // //println!("{}", Matrix::rotate_about_z_axis(rz));
-// 
-        // println!("{}", t_r);
-        // println!("{}", (translate.matmul(&rotate)).transpose());
-// 
-        // panic!();
-// 
-        // //println!("t_r {:?}, (tx, ty, tz) ({}, {}, {})", t_r.get_row(3)?.array, tx, ty, tz);
-// 
-        // //let t_r = translate_transposed;
-        // 
-        // //let t_r = translate_transposed.matmul(&rotate)?;
-        // //let t_r = rotate.matmul(&translate_transposed)?;
-        // //let t_r = rotate.matmul(&translate)?;
-// 
-// 
-        // //transformation_matrices.push(t_r);
-        // transformation_matrices[i] = t_r;
     }
 
 

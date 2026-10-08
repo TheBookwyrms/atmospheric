@@ -9,7 +9,10 @@ pub mod camera_mode;
 use glfw::WindowEvent;
 use crate::context::Context;
 use crate::enums::ContextError;
-use crate::modules::keybindings::camera_movement::{mouse_pan_left_click, mouse_rotate_right_click, mouse_scroll_callback};
+use crate::modules::keybindings::camera_movement::{
+    camera_pan_left_click, camera_rotate_right_click, camera_zoom_mouse_scroll,
+    camera_pan_wasd, camera_rotate_updownleftright,
+};
 use crate::modules::keybindings::pause::pause_space;
 use crate::modules::keybindings::screenshot::screenshot_ctrl_k;
 use crate::modules::keybindings::window::{close_window_escape, necessary_window_stuff};
@@ -17,30 +20,46 @@ use crate::modules::keybindings::camera_mode::change_camera_mode_e;
 
 
 
+
+#[derive(Clone)]
+pub struct Keybindings {
+    keybindings:Vec<KeybindingModule>,
+}
+impl Keybindings {
+    pub fn using(bindings:Vec<KeybindingModule>) -> Self {
+        Self { keybindings: bindings }
+    }
+    pub fn invoke(&self, events:Vec<WindowEvent>, render:&mut Context) -> Result<(), ContextError> {
+        for module in &self.keybindings {
+            match module {
+                KeybindingModule::CameraZoomScroll => camera_zoom_mouse_scroll(&events, render),
+                KeybindingModule::CameraPanLeftClick => {camera_pan_left_click(render); Ok(())},
+                KeybindingModule::CameraRotateRightClick => camera_rotate_right_click(render),
+                KeybindingModule::CameraPanWASD => {camera_pan_wasd(render); Ok(())},
+                KeybindingModule::CameraRotateUpDownLeftRight => {camera_rotate_updownleftright(render); Ok(())},
+                KeybindingModule::PauseSpace => {pause_space(&events, render); Ok(())},
+                KeybindingModule::ScreenshotCtrlK => screenshot_ctrl_k(&events, render),
+                KeybindingModule::CloseWindowEscape => {close_window_escape(&events, render); Ok(())},
+                KeybindingModule::NecessaryWindowStuff => {necessary_window_stuff(&events, render); Ok(())},
+                KeybindingModule::ChangeCameraModeE => change_camera_mode_e(&events, render),
+                KeybindingModule::Custom(callback) => callback(&events, render),
+            }?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone)]
 pub enum KeybindingModule {
-    MouseScroll,
-    MousePanLeftClick,
-    MouseRotateRightClick,
+    CameraZoomScroll,
+    CameraPanLeftClick,
+    CameraRotateRightClick,
+    CameraPanWASD,
+    CameraRotateUpDownLeftRight,
     PauseSpace,
     ScreenshotCtrlK,
     CloseWindowEscape,
     NecessaryWindowStuff,
     ChangeCameraModeE,
-    Custom(Arc<dyn Fn(&WindowEvent, &mut Context)->Result<(), ContextError>>),
-}
-impl KeybindingModule {
-    pub fn keybinding_callback(&self, event:&WindowEvent, render:&mut Context) -> Result<(), ContextError> {
-        match self {
-            KeybindingModule::MouseScroll => mouse_scroll_callback(event, render),
-            KeybindingModule::MousePanLeftClick => mouse_pan_left_click(event, render),
-            KeybindingModule::MouseRotateRightClick => mouse_rotate_right_click(event, render),
-            KeybindingModule::PauseSpace => pause_space(event, render),
-            KeybindingModule::ScreenshotCtrlK => screenshot_ctrl_k(event, render),
-            KeybindingModule::CloseWindowEscape => close_window_escape(event, render),
-            KeybindingModule::NecessaryWindowStuff => necessary_window_stuff(event, render),
-            KeybindingModule::ChangeCameraModeE => change_camera_mode_e(event, render),
-            KeybindingModule::Custom(callback) => callback(event, render),
-        }
-    }
+    Custom(Arc<dyn Fn(&Vec<WindowEvent>, &mut Context)->Result<(), ContextError>>),
 }

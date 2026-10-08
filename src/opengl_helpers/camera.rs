@@ -90,18 +90,21 @@ impl CameraInfo {
 
     pub fn get_camera(&self, vector:CameraVector) -> Vector<f32, 3> {
         let cam_vec_4d = match vector {
-            CameraVector::Position => self.camera_matrix.get_col(0),
-            CameraVector::Target => self.camera_matrix.get_col(1),
-            CameraVector::Right => self.camera_matrix.get_col(2),
-            CameraVector::Up => self.camera_matrix.get_col(3),
-        }.unwrap().to_vector();
+            CameraVector::Position => self.camera_matrix.get_col(0).unwrap().to_vector(),
+            CameraVector::Target   => self.camera_matrix.get_col(1).unwrap().to_vector(),
+            CameraVector::Right    => self.camera_matrix.get_col(2).unwrap().to_vector().normalise().unwrap(),
+            CameraVector::Up       => self.camera_matrix.get_col(3).unwrap().to_vector().normalise().unwrap(),
+        };
         Vector::from_slice(&cam_vec_4d.array[0..3])
     }
 
     pub fn get_camera_view_vector(&self) -> Vector<f32, 3> {
-        //let view_vec_4d = self.camera_matrix.get_col(0).unwrap() - self.camera_matrix.get_col(1).unwrap();
-        let view_vec_4d = self.get_camera(CameraVector::Position) - self.get_camera(CameraVector::Target);
-        Vector::from_slice(&view_vec_4d.array[0..3])
+        self.get_camera(CameraVector::Position) - self.get_camera(CameraVector::Target)
+    }
+
+    /// camera view vector must be defined (non-null vector)
+    pub fn get_camera_view_vector_unit(&self) -> Vector<f32, 3> {
+        self.get_camera_view_vector().normalise().unwrap()
     }
     
     pub fn get_camera_mode(&self) -> CameraMode { self.camera_mode }
@@ -225,10 +228,10 @@ impl Camera {
         orthographic_projection
     }
 
-    pub fn get_look_at_matrix(&self) -> Result<Matrix<f32, 2, S2<4, 4>>, ContextError> {
+    pub fn get_look_at_matrix(&self) -> Matrix<f32, 2, S2<4, 4>> {
         let r = self.camera_info.get_camera(CameraVector::Right);
         let u = self.camera_info.get_camera(CameraVector::Up);
-        let d = self.camera_info.get_camera_view_vector().normalise()?;
+        let d = self.camera_info.get_camera_view_vector_unit();
 
         let look_at_matrix_left = Matrix::from_2darray([
             [r[0], r[1], r[2], 0.],
@@ -243,12 +246,12 @@ impl Camera {
         );
 
         let look_at_matrix = look_at_matrix_left.matmul(&look_at_matrix_right);
-        Ok(look_at_matrix)
+        look_at_matrix
     }
 
-    pub fn get_camera_view_matrix(&self) -> Result<Matrix<f32, 2, S2<4, 4>>, ContextError> {
-        let view_matrix = self.get_look_at_matrix()?;
-        Ok(view_matrix)
+    pub fn get_camera_view_matrix(&self) -> Matrix<f32, 2, S2<4, 4>> {
+        let view_matrix = self.get_look_at_matrix();
+        view_matrix
     }
 
     /// translates the camera position and camera target by a value V=<x, y, z>
@@ -260,14 +263,13 @@ impl Camera {
     /// translates the camera position and camera target a certain amount
     /// forwards, to the right, and upwards based off of its
     /// internal axes
-    pub fn translation_by_internal_axes(&mut self, forward:f32, right:f32, up:f32) -> Result<(), ContextError> {
-        let df = self.camera_info.get_camera_view_vector().normalise()?.multiply_by_constant(forward);
-        let dr = self.camera_info.get_camera(CameraVector::Right).normalise()?.multiply_by_constant(right);
-        let du = self.camera_info.get_camera(CameraVector::Up).normalise()?.multiply_by_constant(up);
+    pub fn translation_by_internal_axes(&mut self, forward:f32, right:f32, up:f32) {
+        let df = self.camera_info.get_camera_view_vector_unit().multiply_by_constant(forward);
+        let dr = self.camera_info.get_camera(CameraVector::Right).multiply_by_constant(right);
+        let du = self.camera_info.get_camera(CameraVector::Up).multiply_by_constant(up);
         self.camera_info.translate_position_target(df);
         self.camera_info.translate_position_target(dr);
         self.camera_info.translate_position_target(du);
-        Ok(())
     }
 
     /// rotates the camera about the origin along an arbitrary axis
@@ -276,23 +278,44 @@ impl Camera {
         self.camera_info.matmul_by_left(rotate)
     }
 
-    /// rotates the camera about the target along its internal axes
-    /// as such, the target position is invariant under this transformation
-    pub fn rotation_about_target(&mut self, axis:CameraAxis, rotation:f32) {
+    ///// rotates the camera about the target along its internal axes\
+    ///// as such, the target position is invariant under this transformation\
+    ///// rotation in degrees
+    //pub fn rotation_about_target(&mut self, axis:CameraAxis, rotation:f32) {
+    //    let axis = match axis {
+    //        CameraAxis::Up => self.camera_info.get_camera(CameraVector::Right).multiply_by_constant(-1.0),
+    //        CameraAxis::Right => self.camera_info.get_camera(CameraVector::Up),
+    //        CameraAxis::Forward => self.camera_info.(self.get_camera(CameraVector::Position) - self.get_camera(CameraVector::Target)),
+    //    };
+    //    
+    //    let plain_rotate = Matrix::rotate_about_arbitrary_axis(axis, rotation);
+    //
+    //    let target_pos_original = self.camera_info.get_camera(CameraVector::Target);
+    //    let target_pos_inverse = self.camera_info.get_camera(CameraVector::Target).multiply_by_constant(-1.0);
+    //    self.camera_info.translate_position(target_pos_inverse);
+    //    //self.camera_info_matrix.translate_position(target_pos_original.multiply_by_constant(-1.0));
+    //    self.camera_info.matmul_by_left(plain_rotate);
+    //    self.camera_info.translate_position(target_pos_original)
+    //}
+
+    /// rotates the camera about itself along its internal axes\
+    /// as such, the target position is invariant under this transformation\
+    /// rotation in degrees
+    pub fn rotation_about_internal_axes(&mut self, axis:CameraAxis, rotation:f32) {
         let axis = match axis {
-            CameraAxis::Up => self.camera_info.get_camera(CameraVector::Right).multiply_by_constant(-1.0),
-            CameraAxis::Right => self.camera_info.get_camera(CameraVector::Up),
-            CameraAxis::Forward => self.camera_info.get_camera_view_vector(),
+            CameraAxis::Up => self.camera_info.get_camera(CameraVector::Up),
+            CameraAxis::Right => self.camera_info.get_camera(CameraVector::Right),
+            CameraAxis::Forward => self.camera_info.get_camera_view_vector_unit(),
         };
         
         let plain_rotate = Matrix::rotate_about_arbitrary_axis(axis, rotation);
 
-        let target_pos_original = self.camera_info.get_camera(CameraVector::Target);
-        let target_pos_inverse = self.camera_info.get_camera(CameraVector::Target).multiply_by_constant(-1.0);
-        self.camera_info.translate_position(target_pos_inverse);
-        //self.camera_info_matrix.translate_position(target_pos_original.multiply_by_constant(-1.0));
+        let camera_pos_original = self.camera_info.get_camera(CameraVector::Position);
+        let camera_pos_inverse = self.camera_info.get_camera(CameraVector::Position).multiply_by_constant(-1.0);
+
+        self.camera_info.translate_position_target(camera_pos_inverse);
         self.camera_info.matmul_by_left(plain_rotate);
-        self.camera_info.translate_position(target_pos_original)
+        self.camera_info.translate_position_target(camera_pos_original);
     }
 
 
@@ -342,14 +365,12 @@ impl Camera {
         // and the right is flipped as well, to ensure right handed axes
 
         self.camera_info.translate_position(
-            self.camera_info.get_camera_view_vector()
-                                                .normalise()?
-                                                .multiply_by_constant(-forward) 
+            self.camera_info.get_camera_view_vector_unit().multiply_by_constant(-forward) 
                                                 // negative to make positive deltas move forwards
         );
         let new_camera_dir = self.camera_info.get_camera_view_vector();
         //self.camera_info_matrix.set_camera(CameraVector::Right, new_camera_dir.cross_product(&self.camera_info_matrix.get_camera(CameraVector::Up))?.normalise()?);
-        self.camera_info.set_camera(CameraVector::Right, self.camera_info.get_camera(CameraVector::Up).cross_product(&new_camera_dir).normalise()?);
+        self.camera_info.set_camera(CameraVector::Right, self.camera_info.get_camera(CameraVector::Up).cross_product(&new_camera_dir).normalise().unwrap());
 
 
 

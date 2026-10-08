@@ -1,10 +1,11 @@
+use std::sync::Arc;
 use std::time::{Instant, SystemTime};
 
 use crate::camera::Camera;
 use crate::enums::{
     BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, UniformType
 };
-use crate::modules::keybindings::KeybindingModule;
+use crate::modules::keybindings::{KeybindingModule, Keybindings};
 use crate::objects::lighting::{Light, LightCounter};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
@@ -42,6 +43,9 @@ impl AssortedContextDetails {
             screenshot_naming_convention: Box::new(Self::default_naming_convention)
         }
     }
+    pub fn set_screenshot_naming_convention(&mut self, function:Box<dyn Fn()->String>) {
+        self.screenshot_naming_convention = function
+    }
 }
 
 
@@ -50,14 +54,14 @@ pub struct Context<'a> {
     pub camera:Camera,
     pub programs:Programs,
     pub textures:Textures<'a>,
-    pub keybinding_modules:Vec<KeybindingModule>,
+    pub keybindings:Keybindings,
 
 
     pub assorted_details:AssortedContextDetails,
 }
 impl<'a> Context<'a> {
     //pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<Box<dyn KeybindingModule>>) -> Result<Self, ContextError> {
-    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<KeybindingModule>) -> Result<Self, ContextError> {
+    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybindings:Keybindings) -> Result<Self, ContextError> {
         let window = Window::new_opengl(window_name, window_width, window_height)?;
         let camera = Camera::new(camera_mode);
 
@@ -65,7 +69,7 @@ impl<'a> Context<'a> {
         let textures = Textures::new_empty();
 
         Ok(Self {
-            window, camera, programs, textures, keybinding_modules,
+            window, camera, programs, textures, keybindings,
             assorted_details:AssortedContextDetails::default(),
          })
     }
@@ -76,14 +80,14 @@ impl<'a> Context<'a> {
         let programs = Programs::compile_all(&window.get_opengl_handle(), &max_lights)?;
         let textures = Textures::new_empty();
 
-        let keybinding_modules = vec![
-            KeybindingModule::MouseScroll, KeybindingModule::MousePanLeftClick, KeybindingModule::MouseRotateRightClick,
+        let keybindings = Keybindings::using(vec![
+            KeybindingModule::CameraZoomScroll, KeybindingModule::CameraPanLeftClick, KeybindingModule::CameraRotateRightClick,
             KeybindingModule::PauseSpace, KeybindingModule::ScreenshotCtrlK,
             KeybindingModule::CloseWindowEscape, KeybindingModule::NecessaryWindowStuff,
-        ];
+        ]);
 
         Ok(Self {
-            window, camera, programs, textures, keybinding_modules,
+            window, camera, programs, textures, keybindings,
             assorted_details:AssortedContextDetails::default(),
          })
     }
@@ -254,7 +258,7 @@ impl<'a> Context<'a> {
         // view
         self.programs.set_uniform(&self.window.get_opengl_handle(), "camera_transformation", UniformType::Mat4,
             //self.camera.get_camera_transform()?)?;
-            self.camera.get_camera_view_matrix()?)?;
+            self.camera.get_camera_view_matrix())?;
 
         // projection
         self.programs.set_uniform(&self.window.get_opengl_handle(), "orthographic_projection", UniformType::Mat4,
@@ -285,12 +289,10 @@ impl<'a> Context<'a> {
 
     fn poll_and_perform_polled_events(&mut self) -> Result<(), ContextError> {
         self.poll_events();
-        let modules = &self.keybinding_modules.clone();
-        for event in self.window.flush_messages() {
-            for module in modules {
-                module.keybinding_callback(&event, self)?;
-            }
-        }
+        //KeybindingModule::CameraPanWASD.keybinding_callback(&WindowEvent::Close, self)?;
+        let events = self.window.flush_messages();
+        let keybindings = self.keybindings.clone();
+        keybindings.invoke(events, self)?;
 
         self.window.set_last_cursor_pos(self.window.get_cursor_pos());
 

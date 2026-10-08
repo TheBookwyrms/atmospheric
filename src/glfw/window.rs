@@ -91,6 +91,8 @@ impl Window {
     pub fn get_background_colour(&self) -> [f32; 3] { self.background_colour }
     pub fn set_background_colour(&mut self, colour:[f32; 3]) { self.background_colour = colour }
     pub fn get_opengl_handle(&self) -> &Gl { &self.opengl }
+    pub fn get_glfw(&self) -> &Glfw { &self.glfw }
+    pub fn get_window(&self) -> &PWindow { &self.window }
 
     pub fn flush_messages(&self) -> Vec<WindowEvent> {
         glfw::flush_messages(&self.events).map(|(_, e)| e).collect::<Vec<WindowEvent>>()

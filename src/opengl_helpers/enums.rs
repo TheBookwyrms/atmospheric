@@ -400,8 +400,6 @@ impl CameraMode {
             Self::PointOfView  => (0.1   , 0.05  ,  0.75),
         }
     }
-    pub(crate) fn default_encompassing()  -> (f32, f32, f32) { (0.0075, 0.0025, 20.0  ) }
-    pub(crate) fn default_point_of_view() -> (f32, f32, f32) { (0.1   , 0.05  , 0.75 ) }
 }
 
 pub enum CameraAxis {

@@ -44,6 +44,7 @@ pub enum GlError {
     InvalidIndex(usize),
     InvalidCustomProgramSelect,
     InvalidDrawInstancing,
+    ShaderModuleIdNotFound,
 }
 
 #[derive(Clone, Copy, Debug)]

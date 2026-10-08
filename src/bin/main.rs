@@ -9,6 +9,7 @@ use atmospheric::enums::{
     CameraMode, ContextError, ImageFormat, LightForm,
     ObjectColour, ObjectMaterials, ObjectTexture
 };
+use atmospheric::modules::shaders::ShaderModule;
 use atmospheric::objects::lighting::Light;
 use atmospheric::objects::{
     lighting::{LightCounter, LightingGenerator},
@@ -32,19 +33,28 @@ use atmospheric::modules::keybindings::{KeybindingModule, Keybindings};
 
 fn main() -> Result<(), ContextError> {
 
-    let keybinding_modules = Keybindings::using(vec![
+    let keybinding_modules = vec![
         KeybindingModule::CameraZoomScroll, KeybindingModule::CameraPanLeftClick, KeybindingModule::CameraRotateRightClick,
         KeybindingModule::PauseSpace, KeybindingModule::ScreenshotCtrlK,
         KeybindingModule::CloseWindowEscape, KeybindingModule::NecessaryWindowStuff,
         KeybindingModule::ChangeCameraModeE,
         KeybindingModule::CameraPanWASD, KeybindingModule::CameraRotateUpDownLeftRight,
-    ]);
+    ];
+
+    let shader_modules = vec![
+        ShaderModule::InstancingBlinnPhong,
+        ShaderModule::PhongOrthographic,
+        ShaderModule::PhongTexture,
+        ShaderModule::SimpleOrthographic,
+        ShaderModule::SimpleTexture,
+        ShaderModule::TwoTexture,
+    ];
 
     let max_lights = LightCounter::max_values(1, 10, 10);
     let mut lighting_generator = LightingGenerator::init(&max_lights);
 
     //let mut render = Context::new_default(max_lights)?;
-    let mut render = Context::new("window name", 900, 900, CameraMode::Encompassing, max_lights, keybinding_modules)?;
+    let mut render = Context::new("window name", 900, 900, CameraMode::Encompassing, max_lights, keybinding_modules, shader_modules)?;
     render.setup_render();
 
 
@@ -130,7 +140,7 @@ fn main() -> Result<(), ContextError> {
 
         let tr = 0.5;
         // simple shader for light source
-        render.use_program(ProgramSelect::SelectSimpleOrthographic, vec![])?;
+        render.use_program(ShaderModule::SimpleOrthographic, vec![])?;
 
         // // light source's diffuse colour changes over time
         point_light2.set_light(LightForm::Diffuse, [
@@ -152,9 +162,9 @@ fn main() -> Result<(), ContextError> {
 
         
 
-        render.use_program(ProgramSelect::SelectInstancingBlinnPhong, vec![point_light2.into(), point_light3.into()])?;
+        render.use_program(ShaderModule::InstancingBlinnPhong, vec![point_light2.into(), point_light3.into()])?;
         
-        real_instancing_object.draw(&render.window.get_opengl_handle(), &mut render.textures, &render.programs)?;
+        real_instancing_object.draw(&render.window.get_opengl_handle(), &mut render.textures, &render.shaders)?;
 
 
 

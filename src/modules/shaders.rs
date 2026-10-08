@@ -1,11 +1,14 @@
-use crate::objects::lighting::LightCounter;
+use crate::camera::Camera;
+use crate::glfw::window::Window;
+use crate::objects::lighting::{Light, LightCounter};
 use crate::opengl::gl::Gl;
 use crate::enums::{
-    GlError, ShaderType, DataFormat, LightSourceForm
+    CameraVector, ContextError, DataFormat, DrawMode, GlError, LightSourceForm, ShaderType, UniformType
 };
 use crate::opengl::intermediate_opengl;
+use crate::opengl::abstractions::WithVao;
 
-
+use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
 #[cfg(target_os = "linux")]
 include!(concat!(env!("OUT_DIR"), "/shaders_glsl.rs"));
@@ -51,6 +54,94 @@ impl<'a> Shaders<'a> {
             Err(GlError::ShaderModuleIdNotFound)
         }
     }
+
+    pub fn disuse_program(&mut self, opengl:&Gl) {
+        intermediate_opengl::disuse_program(opengl);
+        self.current_program = None;
+        self.current_program_type = None;
+    }
+
+    pub fn set_uniform<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, opengl:&Gl, uniform_name:&str, uniform_type:UniformType, value:Matrix<T, N, U>
+    ) -> Result<(), GlError> {
+        match self.current_program {
+            Some(id) => intermediate_opengl::set_uniform(opengl, id, uniform_name, uniform_type, value.as_ptr()),
+            None => Err(GlError::NoProgramBound),
+        }
+    }
+
+    pub fn draw<T:Clone, const ITEMS_PER_VERTEX:usize, const NUM_VERTICES:usize>(
+        &self, objects:WithVao,
+        mode:DrawMode, data:&Matrix<T, 2, S2<ITEMS_PER_VERTEX, NUM_VERTICES>>,
+        format:DataFormat
+    ) -> Result<(), GlError> {
+
+        if let Some(program) = self.current_program_type {
+            program.check_data_format(format)?
+        } else {
+            Err(GlError::InvalidProgramType)?
+        }
+
+        Ok(objects.draw(mode, data))
+
+    }
+
+    pub fn set_uniforms_for_program(&self, shader:ShaderModule<'a>, window:&Window, camera:&Camera, lights:Vec<Light>) -> Result<(), ContextError> {
+        match shader {
+            ShaderModule::InstancingBlinnPhong => {
+                self.set_orthographic_camera_uniforms(window, camera)?;
+                self.set_blinn_phong_uniforms(window, camera)?;
+                for light in lights {
+                    light.set_lighting_uniforms(window, &self)?
+                }
+            },
+            ShaderModule::PhongOrthographic | ShaderModule::PhongTexture => {
+                self.set_orthographic_camera_uniforms(window, camera)?;
+                self.set_blinn_phong_uniforms(window, camera)?;
+            },
+            ShaderModule::SimpleOrthographic => self.set_orthographic_camera_uniforms(window, camera)?,
+            ShaderModule::SimpleTexture | ShaderModule::TwoTexture => self.set_orthographic_camera_uniforms(window, camera)?,
+            ShaderModule::Custom(_) => {},
+        }
+        Ok(())
+    }
+    pub fn set_world_transform_uniform(&self, window:&Window, transform:Matrix<f32, 2, S2<4, 4>>) -> Result<(), ContextError> {
+        let model_transform = Matrix::opengl_to_right_handed().matmul(&transform);
+
+        self.set_uniform(window.get_opengl_handle(), "world_transform", UniformType::Mat4, model_transform)?;
+        Ok(())
+    }
+
+    pub fn set_orthographic_camera_uniforms(&self, window:&Window, camera:&Camera) -> Result<(), ContextError> {
+        // model
+        self.set_world_transform_uniform(window, Matrix::identity())?;
+
+        // view
+        self.set_uniform(window.get_opengl_handle(), "camera_transformation", UniformType::Mat4, camera.get_camera_view_matrix())?;
+
+        // projection
+        self.set_uniform(window.get_opengl_handle(), "orthographic_projection", UniformType::Mat4,
+            camera.get_orthographic_projection(window.get_aspect_ratio()))?;
+        Ok(())
+    }
+
+
+
+    pub fn set_blinn_phong_uniforms(&self, window:&Window, camera:&Camera) -> Result<(), ContextError> {
+        self.set_uniform(window.get_opengl_handle(),"camera_viewpos", UniformType::Vec3,
+            Matrix::from_vector(
+                camera.camera_info.get_camera(CameraVector::Position)
+            ))?;
+        Ok(())
+    }
+
+    pub fn get_current_program(&self) -> Option<u32> {
+        self.current_program
+    }
+
+    pub fn get_current_program_type(&self) -> Option<ShaderModule<'a>> {
+        self.current_program_type
+    }
+
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -108,6 +199,8 @@ impl<'a> ShaderModule<'a> {
             Self::Custom(_u32) => Ok(()),
         }
     }
+
+
 }
 
 

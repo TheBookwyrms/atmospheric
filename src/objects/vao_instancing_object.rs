@@ -1,4 +1,4 @@
-use crate::image_processing::Image;
+use crate::{image_processing::Image, modules::shaders::Shaders};
 use crate::materials::Material;
 use numeracy::matrices::{Matrix, S1, S2, S3,};
 
@@ -199,13 +199,13 @@ impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<'
          }
     }
     
-    pub fn draw(&'a self, opengl:&Gl, textures:&mut Textures<'a>, programs:&Programs) -> Result<(), ContextError> {
+    pub fn draw(&'a self, opengl:&Gl, textures:&mut Textures<'a>, shaders:&Shaders<'a>) -> Result<(), ContextError> {
 
         textures.activate(
-            opengl, OpenglTexture::Texture0, &self.diffuse_texture, programs
+            opengl, OpenglTexture::Texture0, &self.diffuse_texture, shaders
         )?;
         textures.activate(
-            opengl, OpenglTexture::Texture1, &self.specular_texture, programs
+            opengl, OpenglTexture::Texture1, &self.specular_texture, shaders
         )?;
 
 

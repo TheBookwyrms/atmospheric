@@ -1,4 +1,5 @@
 use crate::image_processing::Image;
+use crate::modules::shaders::Shaders;
 use crate::opengl::gl::Gl;
 use crate::enums::{
     GlError, InternalFormat, OpenglTexture,
@@ -108,10 +109,10 @@ impl<'a> Textures<'a> {
         }
     }
 
-    pub fn activate(&mut self, opengl:&Gl, tex:OpenglTexture, prepared:&'a PreparedTexture, programs:&Programs) -> Result<(), GlError> {
+    pub fn activate(&mut self, opengl:&Gl, tex:OpenglTexture, prepared:&'a PreparedTexture, shaders:&Shaders<'a>) -> Result<(), GlError> {
         
         let tex_index = opengl_texture_to_index(tex);
-        let current_program = match programs.current_program {
+        let current_program = match shaders.get_current_program() {
             None => Err(GlError::NoProgramBound),
             Some(n) => Ok(n),
         }?;

@@ -12,7 +12,7 @@ pub struct Window {
     glfw : Glfw,
     window : PWindow,
     events : GlfwReceiver<(f64, WindowEvent)>,
-    pub opengl : Gl,
+    opengl : Gl,
     last_cursor_pos : [f32; 2],
     aspect_ratio : f32,
     background_colour : [f32; 3],

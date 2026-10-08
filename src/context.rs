@@ -6,6 +6,7 @@ use crate::enums::{
     BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, UniformType
 };
 use crate::modules::keybindings::{KeybindingModule, Keybindings};
+use crate::modules::shaders::{ShaderModule, Shaders};
 use crate::objects::lighting::{Light, LightCounter};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
@@ -52,7 +53,8 @@ impl AssortedContextDetails {
 pub struct Context<'a> {
     pub window:Window,
     pub camera:Camera,
-    pub programs:Programs,
+    pub shaders:Shaders<'a>,
+    //pub programs:Programs,
     pub textures:Textures<'a>,
     pub keybindings:Keybindings,
 
@@ -61,15 +63,16 @@ pub struct Context<'a> {
 }
 impl<'a> Context<'a> {
     //pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<Box<dyn KeybindingModule>>) -> Result<Self, ContextError> {
-    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybindings:Keybindings) -> Result<Self, ContextError> {
+    pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybindings:Vec<KeybindingModule>, shaders:Vec<ShaderModule<'a>>) -> Result<Self, ContextError> {
         let window = Window::new_opengl(window_name, window_width, window_height)?;
         let camera = Camera::new(camera_mode);
 
-        let programs = Programs::compile_all(&window.get_opengl_handle(), &max_lights)?;
+        let shaders_compiled = Shaders::using(window.get_opengl_handle(), shaders, &max_lights)?;
+        let keybindings_struct = Keybindings::using(keybindings);
         let textures = Textures::new_empty();
 
         Ok(Self {
-            window, camera, programs, textures, keybindings,
+            window, camera, shaders:shaders_compiled, textures, keybindings:keybindings_struct,
             assorted_details:AssortedContextDetails::default(),
          })
     }
@@ -86,8 +89,21 @@ impl<'a> Context<'a> {
             KeybindingModule::CloseWindowEscape, KeybindingModule::NecessaryWindowStuff,
         ]);
 
+        let shaders = Shaders::using(
+            window.get_opengl_handle(),
+            vec![
+                ShaderModule::InstancingBlinnPhong,
+                ShaderModule::PhongOrthographic,
+                ShaderModule::PhongTexture,
+                ShaderModule::SimpleOrthographic,
+                ShaderModule::SimpleTexture,
+                ShaderModule::TwoTexture,
+            ],
+            &max_lights
+        )?;
+
         Ok(Self {
-            window, camera, programs, textures, keybindings,
+            window, camera, shaders, textures, keybindings,
             assorted_details:AssortedContextDetails::default(),
          })
     }
@@ -111,7 +127,8 @@ impl<'a> Context<'a> {
     pub fn end_render_actions(&mut self) -> Result<(), ContextError> {
         
         self.textures.deactivate_all(&self.window.get_opengl_handle());
-        self.programs.disuse_program(&self.window.get_opengl_handle());
+        self.shaders.disuse_program(&self.window.get_opengl_handle());
+        //self.programs.disuse_program(&self.window.get_opengl_handle());
 
         
         let dt = Instant::now().duration_since(self.assorted_details.current_time).as_secs_f32();
@@ -192,58 +209,28 @@ impl<'a> Context<'a> {
         intermediate_opengl::set_uniform(&self.window.get_opengl_handle(), program_id, uniform.name, uniform.uniform_type, value.as_ptr())
     }
 
-    pub fn use_custom_program(&mut self, shader:ShaderProgram) -> Result<(), GlError> {
-        self.programs.use_program(&self.window.get_opengl_handle(), ProgramSelect::Custom(shader))
+    pub fn use_custom_program(&mut self, shader:ShaderModule<'a>) -> Result<(), GlError> {
+        //self.programs.use_program(&self.window.get_opengl_handle(), ProgramSelect::Custom(shader))
+        self.shaders.use_program(&self.window.get_opengl_handle(), shader)
     }
 
 
     /// lights is used for setting lighting uniforms \
     /// such as for blinn-phong lighting, where we need light source uniforms \
     /// if there are no lights needed, pass empty vec \
-    pub fn use_program(&mut self, program_type:ProgramSelect, lights:Vec<Light>) -> Result<(), ContextError> {
+    pub fn use_program(&mut self, shader:ShaderModule<'a>, lights:Vec<Light>) -> Result<(), ContextError> {
 
-        self.programs.use_program(&self.window.get_opengl_handle(), program_type)?;
+        self.shaders.use_program(&self.window.get_opengl_handle(), shader)?;
+        //self.programs.use_program(&self.window.get_opengl_handle(), program_type)?;
 
-        match program_type {
-            ProgramSelect::SelectSimpleOrthographic => {
-                self.set_orthographic_camera_uniforms()?;
-            },
-            ProgramSelect::SelectPhongOrthographic => {
-                self.set_orthographic_camera_uniforms()?;
-                self.set_blinn_phong_uniforms()?;
-            },
-            ProgramSelect::SelectPhongTexture => {
-                self.set_orthographic_camera_uniforms()?;
-                self.set_blinn_phong_uniforms()?;
-            },
-            ProgramSelect::SelectInstancingBlinnPhong => {
-                self.set_orthographic_camera_uniforms()?;
-                self.set_blinn_phong_uniforms()?;
-                for light in lights {
-                    light.set_lighting_uniforms(&self)?
-                }
-            },
-            //ProgramSelect::SelectInstancingPhongTexture => {
-            //    self.set_orthographic_camera_uniforms()?;
-            //    self.set_blinn_phong_uniforms()?;
-            //},
-            //ProgramSelect::SelectInstancingFull => {
-            //    self.set_orthographic_camera_uniforms()?;
-            //    self.set_blinn_phong_uniforms()?;
-            //},
-            ProgramSelect::SelectSimpleTexture | ProgramSelect::SelectTwoTexture => {
-                self.set_orthographic_camera_uniforms()?;
-            },
-            ProgramSelect::Custom(_) => Err(GlError::InvalidCustomProgramSelect)?
-        }
-        Ok(())
+        self.shaders.set_uniforms_for_program(shader, &self.window, &self.camera, lights)
     }
 
     pub fn set_world_transform_uniform(&self, transform:Matrix<f32, 2, S2<4, 4>>) -> Result<(), ContextError> {
         
         let model_transform = Matrix::opengl_to_right_handed().matmul(&transform);
 
-        self.programs.set_uniform(&self.window.get_opengl_handle(), "world_transform",
+        self.shaders.set_uniform(&self.window.get_opengl_handle(), "world_transform",
             UniformType::Mat4, model_transform)?;
         
         Ok(())
@@ -256,12 +243,12 @@ impl<'a> Context<'a> {
         self.set_world_transform_uniform(Matrix::identity())?;
 
         // view
-        self.programs.set_uniform(&self.window.get_opengl_handle(), "camera_transformation", UniformType::Mat4,
+        self.shaders.set_uniform(&self.window.get_opengl_handle(), "camera_transformation", UniformType::Mat4,
             //self.camera.get_camera_transform()?)?;
             self.camera.get_camera_view_matrix())?;
 
         // projection
-        self.programs.set_uniform(&self.window.get_opengl_handle(), "orthographic_projection", UniformType::Mat4,
+        self.shaders.set_uniform(&self.window.get_opengl_handle(), "orthographic_projection", UniformType::Mat4,
             self.camera.get_orthographic_projection(self.window.get_aspect_ratio()))?;
 
         Ok(())
@@ -274,7 +261,7 @@ impl<'a> Context<'a> {
 
 
             
-        self.programs.set_uniform(&self.window.get_opengl_handle(),"camera_viewpos", UniformType::Vec3,
+        self.shaders.set_uniform(&self.window.get_opengl_handle(),"camera_viewpos", UniformType::Vec3,
             Matrix::from_vector(
                 self.camera.camera_info.get_camera(CameraVector::Position)
             ))?;

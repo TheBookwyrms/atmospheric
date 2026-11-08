@@ -4,5 +4,6 @@ version = "2.2.0"
 edition = "2024"
 
 [dependencies]
-atmospheric = {git = "https://github.com/TheBookwyrms/atmospheric.git", rev = "c842ab088dc18a580773707c87a6429f8b34ce54"}
+#atmospheric = {git = "https://github.com/TheBookwyrms/atmospheric.git", rev = "9027db4c77dc16af6f95778fe5a60182e2141910"}
+atmospheric = {path = "../.."}
 numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", rev = "9e2b182f8ac692182fd9ef3a7aff479574862ec7"}

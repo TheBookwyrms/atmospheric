@@ -1,0 +1,193 @@
+cargo:rerun-if-changed=build.rs
+cargo:rerun-if-env-changed=GLFW3_NO_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=SYSROOT
+cargo:rustc-link-search=native=/nix/store/viv4pj1ynan4rdgfvf6100i9xmf6z66c-glfw-3.4/lib
+cargo:rustc-link-lib=glfw
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+pkg-config found glfw library Library {
+    libs: [
+        "glfw",
+    ],
+    link_paths: [
+        "/nix/store/viv4pj1ynan4rdgfvf6100i9xmf6z66c-glfw-3.4/lib",
+    ],
+    link_files: [],
+    frameworks: [],
+    framework_paths: [],
+    include_paths: [
+        "/nix/store/axnyc7xs7ilxb22lr4l82h7icd8iiwm2-glfw-3.4-dev/include",
+    ],
+    ld_args: [],
+    defines: {},
+    version: "3.4.0",
+    _priv: (),
+}
+cargo:rerun-if-env-changed=X11_NO_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG
+cargo:rerun-if-env-changed=X11_STATIC
+cargo:rerun-if-env-changed=X11_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_STATIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=SYSROOT
+cargo:rerun-if-env-changed=X11_STATIC
+cargo:rerun-if-env-changed=X11_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_STATIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_DYNAMIC
+cargo:rustc-link-search=native=/nix/store/62qx8cgv8h24cq4vgh5ipyflwg1naykl-libx11-1.8.13/lib
+cargo:rustc-link-lib=X11
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG
+cargo:rerun-if-env-changed=X11_STATIC
+cargo:rerun-if-env-changed=X11_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_STATIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+pkg-config x11 lib: Library {
+    libs: [
+        "X11",
+    ],
+    link_paths: [
+        "/nix/store/62qx8cgv8h24cq4vgh5ipyflwg1naykl-libx11-1.8.13/lib",
+    ],
+    link_files: [],
+    frameworks: [],
+    framework_paths: [],
+    include_paths: [
+        "/nix/store/lqh9mgqk0ap2i6a06vlayckz8lx147fm-libx11-1.8.13-dev/include",
+        "/nix/store/0hzdj9d1amf1ydaqpq8yax3fl02gig8r-xorgproto-2025.1/include",
+    ],
+    ld_args: [],
+    defines: {},
+    version: "1.8.13",
+    _priv: (),
+}
+cargo:rerun-if-env-changed=WAYLAND_CLIENT_NO_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG
+cargo:rerun-if-env-changed=WAYLAND_CLIENT_STATIC
+cargo:rerun-if-env-changed=WAYLAND_CLIENT_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_STATIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=SYSROOT
+cargo:rerun-if-env-changed=WAYLAND_CLIENT_STATIC
+cargo:rerun-if-env-changed=WAYLAND_CLIENT_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_STATIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_DYNAMIC
+cargo:rustc-link-search=native=/nix/store/4yrcph5895vdnc8crdzxh9vm51p3wgj3-wayland-1.26.0/lib
+cargo:rustc-link-lib=wayland-client
+cargo:rustc-link-lib=m
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG
+cargo:rerun-if-env-changed=PKG_CONFIG
+cargo:rerun-if-env-changed=WAYLAND_CLIENT_STATIC
+cargo:rerun-if-env-changed=WAYLAND_CLIENT_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_STATIC
+cargo:rerun-if-env-changed=PKG_CONFIG_ALL_DYNAMIC
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_PATH
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_LIBDIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64-unknown-linux-gnu
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR_x86_64_unknown_linux_gnu
+cargo:rerun-if-env-changed=HOST_PKG_CONFIG_SYSROOT_DIR
+cargo:rerun-if-env-changed=PKG_CONFIG_SYSROOT_DIR
+pkg-config wayland-client lib: Library {
+    libs: [
+        "wayland-client",
+        "m",
+    ],
+    link_paths: [
+        "/nix/store/4yrcph5895vdnc8crdzxh9vm51p3wgj3-wayland-1.26.0/lib",
+    ],
+    link_files: [],
+    frameworks: [],
+    framework_paths: [],
+    include_paths: [
+        "/nix/store/a9sak7p65ywm927z3qv3jnwbz9j6f8g4-wayland-1.26.0-dev/include",
+    ],
+    ld_args: [],
+    defines: {},
+    version: "1.26.0",
+    _priv: (),
+}

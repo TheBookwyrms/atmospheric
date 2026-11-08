@@ -1,0 +1,12 @@
+    Checking zune-core v0.4.12
+    Checking simd-adler32 v0.3.7
+    Checking bitflags v1.3.2
+    Checking raw-window-handle v0.6.2
+    Checking numeracy v2.0.1 (https://github.com/TheBookwyrms/numeracy.git?rev=b5be72e85622eacbdb3b74692a8738da03d65cfb#b5be72e8)
+    Checking glfw-sys v6.0.0
+    Checking zune-inflate v0.2.54
+    Checking zune-jpeg v0.4.21
+    Checking glfw v0.60.0
+    Checking zune-png v0.4.10
+    Checking atmospheric v2.2.0 (/home/thebookreader/code and projects/atmospheric)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.48s

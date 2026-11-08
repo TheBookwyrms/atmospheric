@@ -64,7 +64,8 @@ pub struct LightCounter {
     spot_lights:u16,
 }
 impl LightCounter {
-    /// all must have a maximum greater than 0
+    /// all must have a maximum greater than 0\
+    /// otherwise opengl throws a compilation error for shaders
     pub const fn max_values(directional:u16, point:u16, spot:u16) -> LightCounter {
         assert!(directional>0 && point>0 && spot>0);
         LightCounter { directional_lights: directional, point_lights: point, spot_lights: spot }

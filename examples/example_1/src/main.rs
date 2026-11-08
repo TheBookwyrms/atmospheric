@@ -9,8 +9,6 @@ use atmospheric::enums::{
     CameraMode, ContextError, DataFormat, DrawMode, ImageFormat, LightForm, ObjectColour, ObjectMaterials, ObjectTexture
 };
 use atmospheric::modules::shader_modules::shader_module_enum::ShaderModule;
-use atmospheric::objects::ntree::PointThing;
-use atmospheric::objects::octree::Octree;
 use atmospheric::objects::vao_simple_object::SimpleColourObject;
 use atmospheric::objects::{
     lighting::{LightCounter, LightingGenerator},
@@ -19,18 +17,20 @@ use atmospheric::objects::{
 };
 use atmospheric::context::Context;
 
-use atmospheric::opengl::abstractions::WithVao;
 use numeracy::matrices::{ColumnMajor, GraphicsMatrices, Matrix, S2, Grapics};
 use numeracy::vectors::Vector;
 use numeracy::random::pseudo_random;
 
-use std::f32::consts::PI;
-
-
 use atmospheric::modules::keybinding_modules::keybindings::KeybindingModule;
+
+use crate::sphere::TripleRingSphere;
+
+mod sphere;
 
 
 fn main() -> Result<(), ContextError> {
+
+    let a = TripleRingSphere::new(10., Matrix::from_2darray([[1.,0.,0.], [0.,1.,0.], [0.,0.,1.]]));
 
     let keybinding_modules = vec![
         KeybindingModule::CameraZoomScroll, KeybindingModule::CameraPanLeftClick, KeybindingModule::CameraRotateRightClick,
@@ -47,21 +47,20 @@ fn main() -> Result<(), ContextError> {
         ShaderModule::SimpleTransform,
     ];
 
-    const NUM_SUNS:usize = 2;
+    const NUM_STARS:u16 = 2;
+    const NUM_PLANETS_PER_STAR:u8 = 2;
 
-    let max_lights = LightCounter::max_values(1, 10, 10);
+    let max_lights = LightCounter::max_values(1, NUM_STARS, 1);
     let mut lighting_generator = LightingGenerator::init(&max_lights);
 
     //let mut render = Context::new_default(max_lights)?;
-    let mut render = Context::new("window name", 900, 900, CameraMode::Encompassing, max_lights, keybinding_modules, shader_modules)?;
+    let mut render = Context::new("example_1", 900, 900, CameraMode::Encompassing, max_lights, keybinding_modules, shader_modules)?;
     render.setup_render();
 
 
     
+    let mut point_light1 = lighting_generator.generate_point_light(&render, [0., 0., 0.], [0.75, 0.95, 0.65])?;
     let mut point_light2 = lighting_generator.generate_point_light(&render, [0., 0., 0.], [0.75, 0.95, 0.65])?;
-    let mut point_light3 = lighting_generator.generate_point_light(&render, [0., 0., 0.], [0.75, 0.95, 0.65])?;
-    let mut dir_light = lighting_generator.generate_directional_light([0., 0., 1.], [1.;3])?;
-    let mut spot_light = lighting_generator.generate_spot_light([0., 0., 10.], [0., 0., -1.], [0.75, 0.95, 0.65], PI/6., PI/3.)?;
 
     
 
@@ -136,47 +135,11 @@ fn main() -> Result<(), ContextError> {
         Matrix::identity()
     );
 
-    
-    
-    const NUM_POINTS : usize = 299;
-    const SIDE_LEN : f64 = 4.;
-
-    let mut points = vec![];
-    for _ in 0..NUM_POINTS {
-        let x = pseudo_random::pseudo_randf64(-SIDE_LEN, SIDE_LEN, 100) as f32;
-        let y = pseudo_random::pseudo_randf64(-SIDE_LEN, SIDE_LEN, 100) as f32;
-        let z = pseudo_random::pseudo_randf64(-SIDE_LEN, SIDE_LEN, 100) as f32;
-        //let z = 0.0;
-        points.push(PointThing::new(x, y, z));
-    }
-
-    let q1 = Octree::new_on_origin(2.*SIDE_LEN as f32);
-    //let q1 = QuadTree::new_on_origin(2.*SIDE_LEN as f32);
-    let q2 = q1.insert(points, 5).unwrap();
-    
-
-    let quadtree_final = q2;    
-    let quadtree_lines = quadtree_final.get_all_lines::<{NUM_POINTS*2*12}>();
-    let quadtree_points =  quadtree_final.get_all_points::<NUM_POINTS>();
-    
-    let (qtl_vao, qtl_vbo) = render.create_vao_vbo(&quadtree_lines, DataFormat::Position3Colour3Alpha1);//?;
-    let (qtp_vao, qtp_vbo) = render.create_vao_vbo(&quadtree_points, DataFormat::Position3Colour3Alpha1);//?;
 
 
     while !render.render_over() {
 
         render.begin_render_actions()?;
-
-
-
-
-        // quadtree and octree testing
-        render.use_program(ShaderModule::SimpleOrthographic, vec![])?;
-        let with_qtl = WithVao::existing(&render.window.get_opengl_handle(), qtl_vao);
-        render.shaders.draw(with_qtl, DrawMode::GlLines, &quadtree_lines, DataFormat::Position3Colour3Alpha1)?;
-        let with_qtp = WithVao::existing(&render.window.get_opengl_handle(), qtp_vao);
-        render.shaders.draw(with_qtp, DrawMode::GlPoints, &quadtree_points, DataFormat::Position3Colour3Alpha1)?;
-
 
 
 
@@ -188,25 +151,23 @@ fn main() -> Result<(), ContextError> {
         render.use_program(ShaderModule::SimpleOrthographic, vec![])?;
 
         // // light source's diffuse colour changes over time
-        point_light2.set_light(LightForm::Diffuse, [
+        point_light1.set_light(LightForm::Diffuse, [
             f32::sin(2.*0.75*time), f32::sin(2.*0.25*time), f32::sin(2.*0.65*time),
         ]);
         //point_light2.set_position([10.*f32::sin(time), 10.*f32::cos(time), 10.]);
-        point_light2.translate([tr*f32::sin(time), tr*f32::cos(time), 0.]);
+        point_light1.translate([tr*f32::sin(time), tr*f32::cos(time), 0.]);
 
-        point_light3.set_light(LightForm::Diffuse, [
+        point_light2.set_light(LightForm::Diffuse, [
             f32::sin(2.*0.65*time), f32::sin(2.*0.75*time), f32::sin(2.*0.25*time),
         ]);
         //point_light3.set_position([-10.*f32::cos(time), -10.*f32::sin(time), 10.]);
-        point_light3.translate([-tr*f32::cos(time), -tr*f32::sin(time), 0.]);
+        point_light2.translate([-tr*f32::cos(time), -tr*f32::sin(time), 0.]);
 
+        point_light1.draw(&render)?;
         point_light2.draw(&render)?;
-        point_light3.draw(&render)?;
-
-        spot_light.rotate([0., -0.75, 0.])?;
 
         
-        let a = vec![point_light2.into(), point_light3.into()];
+        let a = vec![point_light1.into(), point_light2.into()];
         render.use_program(ShaderModule::InstancingBlinnPhong, a.clone())?;
 
         render.shaders.set_orthographic_camera_uniforms(&render.window, &render.camera)?;

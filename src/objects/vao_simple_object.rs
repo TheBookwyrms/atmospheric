@@ -1,9 +1,7 @@
 use numeracy::matrices::{Matrix, S2};
 
 
-use crate::{enums::{
-    AttributeLoc::At, DataFormat, DrawMode, DrawType, ObjectColour, UpdateVertexAttrib::{PerInstance, PerVertex}
-}, objects::vao_instancing_object::InstancingObject};
+use crate::{enums::{AttributeLoc::At, DataFormat, DrawMode, DrawType, ObjectColour, UpdateVertexAttrib::{PerInstance, PerVertex}}};
 use crate::opengl::abstractions::{WithVao, WithVbo};
 use crate::opengl::gl::Gl;
 
@@ -14,14 +12,14 @@ static MAT_ONES_LAZYLOCK:LazyLock<Matrix<f32, 2, S2<4, 1>>> = LazyLock::new(|| M
  
  
 pub struct SimpleColourObject<const NUM_VERTICES:usize> {
-   position_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+   origin_position_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
    
    _colour_matrix:ObjectColour<1, NUM_VERTICES>,
    transformation_matrix:Matrix<f32, 2, S2<4, 4>>,
    prior_transformation_matrix:Matrix<f32, 2, S2<4, 4>>,
    
    object_vao:u32,
-   _position_matrix_vbo:u32,
+   _oeigin_position_matrix_vbo:u32,
    _colour_matrix_vbo:u32,
    transformation_matrix_vbo:u32,
 }
@@ -30,18 +28,18 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
 
     pub fn new(
         opengl:&Gl,
-        positions:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+        origin_positions:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
         colour:ObjectColour<1, NUM_VERTICES>,
         transformation:Matrix<f32, 2, S2<4, 4>>,
      ) -> Self {
  
 
-        let dtype_size = positions.dtype_memsize() as i32;
+        let dtype_size = origin_positions.dtype_memsize() as i32;
 
         let with_object_vao = WithVao::new(opengl);
 
         let with_positions_vbo = WithVbo::new(opengl);
-        with_positions_vbo.buffer_data(&positions, DrawType::DynamicDraw);
+        with_positions_vbo.buffer_data(&origin_positions, DrawType::DynamicDraw);
         DataFormat::Position3(At(0), PerVertex).set_vertex_attribs(opengl, dtype_size);
 
         let with_colours_vbo = WithVbo::new(opengl);
@@ -67,8 +65,8 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
 
         let with_transformations_vbo = WithVbo::new(opengl);
         with_transformations_vbo.buffer_data(&transformation, DrawType::DynamicDraw);
-        // takes up locations 8, 9, 10, 11
-        DataFormat::TranformationMatrix4x4(At(8), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
+        // takes up locations 2, 3, 4, 5
+        DataFormat::TranformationMatrix4x4(At(2), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
 
 
 
@@ -77,20 +75,20 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
 
  
         Self {
-            position_matrix: positions,
+            origin_position_matrix: origin_positions,
             _colour_matrix: colour,
             //texture_coords_matrix: texture_coords,
             transformation_matrix: transformation.clone(),
             prior_transformation_matrix: transformation,
  
             object_vao: with_object_vao.get_vao(),
-            _position_matrix_vbo: with_positions_vbo.get_vbo(),
+            _oeigin_position_matrix_vbo: with_positions_vbo.get_vbo(),
             _colour_matrix_vbo: with_colours_vbo.get_vbo(),
             transformation_matrix_vbo: with_transformations_vbo.get_vbo(),
          }
     }
     
-    pub fn draw<'a>(&'a self, opengl:&Gl) {
+    pub fn draw(&self, opengl:&Gl) {
 
         let with_vao = WithVao::existing(opengl, self.object_vao);
         let with_transformation_vbo = WithVbo::existing(opengl, self.transformation_matrix_vbo);
@@ -99,6 +97,6 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
             with_transformation_vbo.buffer_sub_data(&self.transformation_matrix);
         }
 
-        with_vao.draw_instanced(DrawMode::GlTriangles, &self.position_matrix, 1);
+        with_vao.draw_instanced(DrawMode::GlTriangles, &self.origin_position_matrix, 1);
     }
 }

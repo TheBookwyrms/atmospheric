@@ -1,4 +1,4 @@
-use crate::{image_processing::Image, modules::shaders::Shaders};
+use crate::{image_processing::Image, modules::shader_modules::shaders::Shaders};
 use crate::materials::Material;
 use numeracy::matrices::{Matrix, S1, S2, S3,};
 
@@ -12,6 +12,8 @@ use crate::enums::{
 use crate::opengl::abstractions::{PreparedTexture, TextureSetup, Textures, WithVao, WithVbo};
 use crate::opengl::gl::Gl;
 
+use std::ops::{Index, IndexMut};
+use std::slice::IterMut;
 use std::sync::LazyLock;
 
 #[cfg(target_os = "linux")]
@@ -24,9 +26,9 @@ static MAT_ONES_LAZYLOCK:LazyLock<Matrix<f32, 2, S2<4, 1>>> = LazyLock::new(|| M
 
  
  
- pub struct InstancingObject<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
-    position_matrix:&'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
-    _normals_matrix:&'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+pub struct InstancingObject<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
+    position_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+    _normals_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
     
     _colour_matrix:ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
     //texture_coords_matrix:ObjectTextureCoords<NUM_VERTICES>,
@@ -47,14 +49,27 @@ static MAT_ONES_LAZYLOCK:LazyLock<Matrix<f32, 2, S2<4, 1>>> = LazyLock::new(|| M
 
     diffuse_texture:PreparedTexture,
     specular_texture:PreparedTexture,
- }
+}
+
+impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> Index<usize> for InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+    type Output = Matrix<f32, 2, S2<4, 4>>;
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.transformation_matrices[index]
+    }
+}
+
+impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> IndexMut<usize> for InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.transformation_matrices[index]
+    }
+}
  
-impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<'a, NUM_INSTANCES, NUM_VERTICES> {
+impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
 
     pub fn new(
         opengl          : &Gl,
-        positions       : &'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
-        normals         : &'a Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+        positions       : Matrix<f32, 2, S2<3, NUM_VERTICES>>,
+        normals         : Matrix<f32, 2, S2<3, NUM_VERTICES>>,
         colour          : ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
         materials       : ObjectMaterials<NUM_VERTICES>,
         texture         : ObjectTexture<NUM_VERTICES>,
@@ -199,13 +214,13 @@ impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<'
          }
     }
     
-    pub fn draw(&'a self, opengl:&Gl, textures:&mut Textures<'a>, shaders:&Shaders<'a>) -> Result<(), ContextError> {
+    pub fn draw(&self, opengl:&Gl, textures:&mut Textures, shaders:&Shaders) -> Result<(), ContextError> {
 
         textures.activate(
-            opengl, OpenglTexture::Texture0, &self.diffuse_texture, shaders
+            opengl, OpenglTexture::Texture0, self.diffuse_texture, shaders
         )?;
         textures.activate(
-            opengl, OpenglTexture::Texture1, &self.specular_texture, shaders
+            opengl, OpenglTexture::Texture1, self.specular_texture, shaders
         )?;
 
 
@@ -232,3 +247,179 @@ impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<'
         Ok(())
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//pub struct InstancingIterator<'a, const NUM_INSTANCES:usize> {
+//    matrices: &'a [Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
+//    index: usize,
+//}
+//
+//pub struct InstancingIntoIterator<const NUM_INSTANCES:usize> {
+//    matrices:[Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES], // Matrix<f32, 2, S2<4, 4>>
+//}
+//
+//impl<'a, const NUM_INSTANCES:usize> Iterator for InstancingIterator<'a, NUM_INSTANCES> {
+//    type Item = &'a f32;
+//
+//    fn next(&mut self) -> Option<Self::Item> {
+//        if self.index < self.matrices.array.len() {
+//            let result = Some(&self.matrices.array[self.index]);
+//            self.index += 1;
+//            result
+//        } else {
+//            None
+//        }
+//    }
+//}
+//
+//impl<const NUM_INSTANCES:usize> Iterator for InstancingIntoIterator<NUM_INSTANCES> {
+//    type Item = f32;
+//
+//    fn next(&mut self) -> Option<Self::Item> {
+//        if self.matrices.array.len() == 0 {
+//            return None;
+//        }
+//        let result = self.matrices.array.remove(0);
+//        Some(result)
+//    }
+//}
+//
+//
+//impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> IntoIterator for InstancingObject<'a, NUM_INSTANCES, NUM_VERTICES> {
+//    type Item = f32;
+//    type IntoIter = InstancingIntoIterator<NUM_INSTANCES>;
+//    
+//    fn into_iter(self) -> InstancingIntoIterator<NUM_INSTANCES> {
+//        InstancingIntoIterator { matrices: self.transformation_matrices }
+//    }
+//}
+//
+//
+//impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<'a, NUM_INSTANCES, NUM_VERTICES> {
+//    pub fn iter(&'_ self) -> InstancingIterator<'_, NUM_INSTANCES> {
+//        InstancingIterator { matrices: &self.transformation_matrices, index: 0 }
+//    }
+//}
+
+
+
+
+//impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> Iterator for InstancingObject<'a, NUM_INSTANCES, NUM_VERTICES> {
+//    type Item = Matrix<f32, 2, S2<4, 4>>;
+//    fn next(&mut self) -> Option<Self::Item> {
+//        
+//    }
+//    fn next(&mut self) -> Option<Self::Item> {
+//        if self.index < self.data.len() {
+//            let item = self.data[self.index];
+//            self.index += 1;
+//            Some(item)
+//        } else {
+//            None
+//        }
+//    }
+//}
+//
+//impl<'a, const NUM_INSTANCES:usize, const NUM_VERTICES:usize> IntoIterator for InstancingObject<'a, NUM_INSTANCES, NUM_VERTICES> {}
+
+
+
+
+
+
+
+
+
+pub struct InstancingIter<const NUM_INSTANCES:usize> {
+    data: [Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
+    index: usize,
+}
+
+impl<const NUM_INSTANCES:usize> Iterator for InstancingIter<NUM_INSTANCES> {
+    type Item = Matrix<f32, 2, S2<4, 4>>;
+
+    // next() must advance the state and return the next item.
+    // Return None when the index reaches the end.
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index < self.data.len() {
+            let item = self.data[self.index].clone();
+            self.index += 1;
+            Some(item)
+        } else {
+            None
+        }
+    }
+}
+
+impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> IntoIterator for InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+    type Item = Matrix<f32, 2, S2<4, 4>>;
+    type IntoIter = InstancingIter<NUM_INSTANCES>;
+
+    // into_iter() consumes self and returns the iterator.
+    // This moves the data into the iterator struct.
+    fn into_iter(self) -> Self::IntoIter {
+        InstancingIter {
+            data: self.transformation_matrices,
+            index: 0,
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+    pub fn iter_mut(&mut self) -> IterMut<'_, Matrix<f32, 2, S2<4, 4>>> {
+            self.transformation_matrices.iter_mut()
+    }
+    //fn iter_mut(&mut self) -> InstancingIterMut<NUM_INSTANCES> {
+    //        InstancingIterMut { data : self.transformation_matrices.iter_mut(), index:0 }
+    //}
+}
+
+//pub struct InstancingIterMut<'a, const NUM_INSTANCES:usize> {
+//    data: IterMut<'_, Matrix<f32, 2, S2<4, 4>>>,
+//    index: usize,
+//}
+//
+//impl<'a, const NUM_INSTANCES:usize> Iterator for InstancingIterMut<'a, NUM_INSTANCES> {
+//    type Item = &'a mut Matrix<f32, 2, S2<4, 4>>;
+//
+//    // next() must advance the state and return the next item.
+//    // Return None when the index reaches the end.
+//    fn next(&mut self) -> Option<Self::Item> {
+//        if self.index < self.data.len() {
+//            self.data.
+//            let mut item = self.data[self.index].clone();
+//            self.index += 1;
+//            Some(mut item)
+//        } else {
+//            None
+//        }
+//    }
+//}//

@@ -14,7 +14,6 @@ pub struct Window {
     events : GlfwReceiver<(f64, WindowEvent)>,
     opengl : Gl,
     last_cursor_pos : [f32; 2],
-    aspect_ratio : f32,
     background_colour : [f32; 3],
 }
 
@@ -36,7 +35,6 @@ impl Window {
                                 events,
                                 opengl,
                                 last_cursor_pos:[0.0, 0.0],
-                                aspect_ratio:width as f32 / height as f32, 
                                 background_colour:[0.5, 0.5, 0.5],
                             }
                         )
@@ -86,8 +84,7 @@ impl Window {
     }
     pub fn get_last_cursor_pos(&self) -> [f32; 2] { self.last_cursor_pos }
     pub fn set_last_cursor_pos(&mut self, last:[f32; 2]) { self.last_cursor_pos = last }
-    pub fn get_aspect_ratio(&self) -> f32 { self.aspect_ratio }
-    pub fn set_aspect_ratio(&mut self, ratio:f32) { self.aspect_ratio = ratio }
+    pub fn get_aspect_ratio(&self) -> f32 { self.width() as f32 / self.height() as f32 }
     pub fn get_background_colour(&self) -> [f32; 3] { self.background_colour }
     pub fn set_background_colour(&mut self, colour:[f32; 3]) { self.background_colour = colour }
     pub fn get_opengl_handle(&self) -> &Gl { &self.opengl }

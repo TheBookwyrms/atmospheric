@@ -1,11 +1,11 @@
 use crate::context::Context;
 use crate::enums::{ContextError, DataFormat, DrawMode, LightForm, LightSourceForm, UniformType};
 use crate::glfw::window::Window;
-use crate::modules::shaders::Shaders;
+use crate::modules::shader_modules::shaders::Shaders;
 //use crate::opengl::abstractions::{WithObject, WithVao, WithVbo};
 use crate::opengl::abstractions::{WithVao, WithVbo};
 //use numeracy::matrices::Matrix;
-use numeracy::matrices::{Matrix, S2};
+use numeracy::matrices::{Matrix, S2, GraphicsMatrices, Grapics, RowMajor};
 use numeracy::vectors::Vector;
 
 
@@ -272,35 +272,30 @@ pub struct PointLight {
 }
 impl PointLight {
     pub fn set_lighting_uniforms(&self, window:&Window, shaders:&Shaders) -> Result<(), ContextError> {
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("point_lights[{}].position", self.point_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.position])
+            Vector::from_1darray(self.position)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("point_lights[{}].ambient_colour", self.point_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.ambient_colour])
+            Vector::from_1darray(self.ambient_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("point_lights[{}].diffuse_colour", self.point_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.diffuse_colour])
+            Vector::from_1darray(self.diffuse_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("point_lights[{}].specular_colour", self.point_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.specular_colour])
+            Vector::from_1darray(self.specular_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_float(
             window.get_opengl_handle(),
             &format!("point_lights[{}].attenuation_factor", self.point_light_index),
-            UniformType::Float,
-            Matrix::from_2darray([[self.attenuation.get_attenuation_factor()]])
+            self.attenuation.get_attenuation_factor()
         )?;
         Ok(())
     }
@@ -364,29 +359,25 @@ pub struct DirectionalLight {
 }
 impl DirectionalLight {
     pub fn set_lighting_uniforms(&self, window:&Window, shaders:&Shaders) -> Result<(), ContextError> {
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("directional_lights[{}].direction", self.directional_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.direction])
+            Vector::from_1darray(self.direction)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("directional_lights[{}].ambient_colour", self.directional_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.ambient_colour])
+            Vector::from_1darray(self.ambient_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("directional_lights[{}].diffuse_colour", self.directional_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.diffuse_colour])
+            Vector::from_1darray(self.diffuse_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("directional_lights[{}].specular_colour", self.directional_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.specular_colour])
+            Vector::from_1darray(self.specular_colour)
         )?;
         Ok(())
     }
@@ -418,53 +409,45 @@ pub struct SpotLight {
 }
 impl SpotLight {
     pub fn set_lighting_uniforms(&self, window:&Window, shaders:&Shaders) -> Result<(), ContextError> {
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].position", self.spot_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.position])
+            Vector::from_1darray(self.position)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].direction", self.spot_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.direction])
+            Vector::from_1darray(self.direction)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].ambient_colour", self.spot_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.ambient_colour])
+            Vector::from_1darray(self.ambient_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].diffuse_colour", self.spot_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.diffuse_colour])
+            Vector::from_1darray(self.diffuse_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_vec3(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].specular_colour", self.spot_light_index),
-            UniformType::Vec3,
-            Matrix::from_2darray([self.specular_colour])
+            Vector::from_1darray(self.specular_colour)
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_float(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].inner_cutoff_angle", self.spot_light_index),
-            UniformType::Float,
-            Matrix::from_2darray([[self.cos_of_inner_cutoff_angle]])
+            self.cos_of_inner_cutoff_angle
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_float(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].outer_cutoff_angle", self.spot_light_index),
-            UniformType::Float,
-            Matrix::from_2darray([[self.cos_of_outer_cutoff_angle]])
+            self.cos_of_outer_cutoff_angle
         )?;
-        shaders.set_uniform(
+        shaders.set_uniform_float(
             window.get_opengl_handle(),
             &format!("spot_lights[{}].attenuation_factor", self.spot_light_index),
-            UniformType::Float,
-            Matrix::from_2darray([[self.attenuation.get_attenuation_factor()]])
+            self.attenuation.get_attenuation_factor()
         )?;
         Ok(())
     }
@@ -476,13 +459,13 @@ impl SpotLight {
     /// rotation in degrees
     pub fn rotate(&mut self, rotation:[f32; 3]) -> Result<(), ContextError> {
         let dir= Matrix::from_2darray([[self.direction[0], self.direction[1], self.direction[2], 0.]]).transpose();
-        let rotm = Matrix::rotate(Vector::from_1darray(rotation));
+        let rotm = GraphicsMatrices::<RowMajor>::rotate(Vector::from_1darray(rotation));
         //let rot = Matrix::from_2darray([[rotation[0]], [rotation[1]], [rotation[2]], [1.]]);
         let rotated = rotm.matmul(&dir).transpose();
         //self.direction = [rotated.array[0], rotated.array[1], rotated.array[2]];
 
         let direction = Vector::from_1darray([self.direction[0], self.direction[1], self.direction[2], 0.]);
-        let rotation = Matrix::rotate(Vector::from_1darray(rotation));
+        let rotation = GraphicsMatrices::<RowMajor>::rotate(Vector::from_1darray(rotation));
         let self_rotated = rotation.matmul(&Matrix::from_vector(direction).reshape(S2::<1, 4>)?);
         //let self_direction = [rotated.array[0], rotated.array[1], rotated.array[2]];
 

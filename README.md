@@ -24,3 +24,4 @@ TO DO
 - [x] test out whether multiple shader programs can be used sequentially without overriding each other
     - [ ] can i use multiple shader calls, at multiple (concurrent or different) positions, and see all of the results simultaneously, without conflicts
 - [x] migrate things from rendering_stuff_rs to atmospheric
+- [ ] transition from zune_jpg and zune_png to stb_image library

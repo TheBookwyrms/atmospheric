@@ -67,6 +67,7 @@ checksum = "34080505efa8e45a4b816c349525ebe327ceaa8559756f0356cba97ef3bf7432"
 [[package]]
 name = "numeracy"
 version = "2.0.1"
+source = "git+https://github.com/TheBookwyrms/numeracy.git?rev=b5be72e85622eacbdb3b74692a8738da03d65cfb#b5be72e85622eacbdb3b74692a8738da03d65cfb"
 
 [[package]]
 name = "objc-sys"

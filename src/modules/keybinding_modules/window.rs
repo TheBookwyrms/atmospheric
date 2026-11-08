@@ -28,7 +28,6 @@ pub(crate) fn necessary_window_stuff(events:&Vec<WindowEvent>, render:&mut Conte
                         render.window.iconify()
                     },
                     false => {
-                        render.window.set_aspect_ratio(width as f32/height as f32);
                         intermediate_opengl::viewport(&render.window.get_opengl_handle(), width, height)
                     },
                 }

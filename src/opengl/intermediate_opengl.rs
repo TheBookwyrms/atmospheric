@@ -1,3 +1,6 @@
+use numeracy::matrices::{Matrix, S1, S2};
+use numeracy::vectors::Vector;
+
 use crate::opengl::gl;
 use crate::opengl::gl::Gl;
 use crate::opengl::raw_opengl;
@@ -125,21 +128,34 @@ pub fn create_shader_program(opengl:&Gl, vertex_id:u32, fragment_id:u32) -> Resu
     Ok(program_id)
 }
 
-
-
-
-pub fn set_uniform<T:Clone>(opengl:&Gl, program_id:u32,
-                    uniform_name:&str, uniform_type:UniformType,
-                    value:*const T) -> Result<(), GlError> {
+pub fn set_uniform_int(opengl:&Gl, program_id:u32, uniform_name:&str, value:i32) -> Result<(), GlError> {
     let location_name = get_uniform_location(opengl, program_id, uniform_name)?;
-    match uniform_type {
-        UniformType::Int   => raw_opengl::set_uniform_int(  opengl, location_name,      value as *const i32),
-        UniformType::Float => raw_opengl::set_uniform_float(opengl, location_name,    value as *const f32),
-        UniformType::Vec3  => raw_opengl::set_uniform_vec3( opengl, location_name, value as *const f32),
-        UniformType::Mat4  => raw_opengl::set_uniform_mat4( opengl, location_name, value as *const f32),
-    }
+    raw_opengl::set_uniform_int(opengl, location_name, vec![value].as_ptr());
     Ok(())
 }
+
+pub fn set_uniform_float(opengl:&Gl, program_id:u32, uniform_name:&str, value:f32) -> Result<(), GlError> {
+    let location_name = get_uniform_location(opengl, program_id, uniform_name)?;
+    raw_opengl::set_uniform_float(opengl, location_name, vec![value].as_ptr());
+    Ok(())
+}
+
+pub fn set_uniform_vec3(opengl:&Gl, program_id:u32, uniform_name:&str, value:Vector<f32, 3>) -> Result<(), GlError> {
+    let location_name = get_uniform_location(opengl, program_id, uniform_name)?;
+    raw_opengl::set_uniform_vec3(opengl, location_name, value.as_ptr());
+    Ok(())
+}
+
+pub fn set_uniform_mat4(opengl:&Gl, program_id:u32, uniform_name:&str, value:Matrix<f32, 2, S2<4, 4>>) -> Result<(), GlError> {
+    let location_name = get_uniform_location(opengl, program_id, uniform_name)?;
+    raw_opengl::set_uniform_mat4(opengl, location_name, value.as_ptr());
+    Ok(())
+}
+
+
+
+
+
 
 pub fn get_uniform_location(opengl:&Gl, program_id:u32, uniform_name:&str) -> Result<i32, GlError> {
     match CString::new(uniform_name) {

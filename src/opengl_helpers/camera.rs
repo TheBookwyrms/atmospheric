@@ -1,7 +1,7 @@
 use std::mem::swap;
 
 //use numeracy::matrices::Matrix;
-use numeracy::matrices::{Matrix, S2};
+use numeracy::matrices::{GraphicsMatrices, Matrix, RowMajor, S2, Grapics};
 use numeracy::vectors::Vector;
 use numeracy::enums::MatrixError;
 
@@ -239,7 +239,7 @@ impl Camera {
             [d[0], d[1], d[2], 0.],
             [  0.,   0.,   0., 1.],
         ]);
-        let look_at_matrix_right = Matrix::translate(
+        let look_at_matrix_right = GraphicsMatrices::<RowMajor>::translate(
             self.camera_info
                 .get_camera(CameraVector::Position)
                 .multiply_by_constant(-1.0)
@@ -274,7 +274,7 @@ impl Camera {
 
     /// rotates the camera about the origin along an arbitrary axis
     pub fn rotation_about_origin(&mut self, axis:Vector<f32, 3>, rotation:f32) {
-        let rotate = Matrix::rotate_about_arbitrary_axis(axis, rotation);
+        let rotate = GraphicsMatrices::<RowMajor>::rotate_about_arbitrary_axis(axis, rotation);
         self.camera_info.matmul_by_left(rotate)
     }
 
@@ -308,7 +308,7 @@ impl Camera {
             CameraAxis::Forward => self.camera_info.get_camera_view_vector_unit(),
         };
         
-        let plain_rotate = Matrix::rotate_about_arbitrary_axis(axis, rotation);
+        let plain_rotate = GraphicsMatrices::<RowMajor>::rotate_about_arbitrary_axis(axis, rotation);
 
         let camera_pos_original = self.camera_info.get_camera(CameraVector::Position);
         let camera_pos_inverse = self.camera_info.get_camera(CameraVector::Position).multiply_by_constant(-1.0);
@@ -320,7 +320,7 @@ impl Camera {
 
 
     pub fn rotation_about_origin_on_xyz(&mut self, rotation:Vector<f32, 3>) {
-        let rotate_about_origin = Matrix::rotate(rotation);
+        let rotate_about_origin = GraphicsMatrices::<RowMajor>::rotate(rotation);
         self.camera_info.matmul_by_left(rotate_about_origin)
     }
 

@@ -1,5 +1,5 @@
 use crate::image_processing::Image;
-use crate::modules::shaders::Shaders;
+use crate::modules::shader_modules::shaders::Shaders;
 use crate::opengl::gl::Gl;
 use crate::enums::{
     GlError, InternalFormat, OpenglTexture,
@@ -92,10 +92,10 @@ fn index_to_opengl_texture(index:usize) -> Result<OpenglTexture, GlError> {
 
 
 
-pub struct Textures<'a> {
-    textures  : [Option<&'a PreparedTexture>; 32]
+pub struct Textures {
+    textures  : [Option<PreparedTexture>; 32]
 }
-impl<'a> Textures<'a> {
+impl Textures {
     pub fn new_empty() -> Self {
         Textures {
             textures:[
@@ -107,7 +107,7 @@ impl<'a> Textures<'a> {
         }
     }
 
-    pub fn activate(&mut self, opengl:&Gl, tex:OpenglTexture, prepared:&'a PreparedTexture, shaders:&Shaders<'a>) -> Result<(), GlError> {
+    pub fn activate(&mut self, opengl:&Gl, tex:OpenglTexture, prepared:PreparedTexture, shaders:&Shaders) -> Result<(), GlError> {
         
         let tex_index = opengl_texture_to_index(tex);
         let current_program = match shaders.get_current_program() {
@@ -120,10 +120,11 @@ impl<'a> Textures<'a> {
             None => {
                 intermediate_opengl::active_texture(opengl, tex);
                 intermediate_opengl::bind_texture(opengl, prepared.texture_type, prepared.texture);
-                intermediate_opengl::set_uniform(
-                    opengl, current_program, &uniform,
-                    UniformType::Int, Matrix::from_scalar(tex_index).as_ptr()
-                )?;
+                intermediate_opengl::set_uniform_int(opengl, current_program, &uniform, tex_index as i32)?;
+                //intermediate_opengl::set_uniform(
+                //    opengl, current_program, &uniform,
+                //    UniformType::Int, Matrix::from_scalar(tex_index).as_ptr()
+                //)?;
                 self.textures[tex_index] = Some(prepared);
                 Ok(())
             },
@@ -157,13 +158,13 @@ impl<'a> Textures<'a> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct PreparedTexture {
     texture:u32,
     texture_type:TextureTarget,
-    _width:i32,
-    _height:i32,
-    _pixels:Vec<u8>,
+    //_width:i32,
+    //_height:i32,
+    //_pixels:Vec<u8>,
 }
 
 
@@ -276,7 +277,7 @@ impl<'a> TextureSetup<'a> {
             Ok(
                 PreparedTexture {
                     texture: self.texture, texture_type: self.texture_type,
-                    _width: self.width, _height: self.height, _pixels: self.pixels
+                    //_width: self.width, _height: self.height, _pixels: self.pixels
                 }
             )
         }

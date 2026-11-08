@@ -74,7 +74,7 @@ pub fn create_cube_vertices(centre:(f32, f32, f32), side_len:f32) -> [[f32; 3]; 
     ]
 }
 
-
+#[derive(Clone)]
 pub struct Cube {
     position_matrix : Matrix<f32, 2, S2<3, 36>>,
     colour_matrix   : Matrix<f32, 2, S2<4, 36>>,
@@ -91,9 +91,13 @@ impl Cube {
         Self { position_matrix, colour_matrix, normal_matrix, texture_matrix }
     }
     pub fn get_position_matrix(&self) -> &Matrix<f32, 2, S2<3, 36>> { &self.position_matrix }
-    pub fn get_colour_matrix(&self)   -> &Matrix<f32, 2, S2<4, 36>> { &self.colour_matrix }
-    pub fn get_normal_matrix(&self)   -> &Matrix<f32, 2, S2<3, 36>> { &self.normal_matrix }
-    pub fn get_texture_matrix(&self)  -> &Matrix<f32, 2, S2<2, 36>> { &self.texture_matrix }
+    pub fn get_colour_matrix(  &self) -> &Matrix<f32, 2, S2<4, 36>> { &self.colour_matrix }
+    pub fn get_normal_matrix(  &self) -> &Matrix<f32, 2, S2<3, 36>> { &self.normal_matrix }
+    pub fn get_texture_matrix( &self) -> &Matrix<f32, 2, S2<2, 36>> { &self.texture_matrix }
+    pub fn get_pcnt_matrices(self) -> (
+        Matrix<f32, 2, S2<3, 36>>, Matrix<f32, 2, S2<4, 36>>,
+        Matrix<f32, 2, S2<3, 36>>, Matrix<f32, 2, S2<2, 36>>,
+    ) { ( self.position_matrix, self.colour_matrix, self.normal_matrix, self.texture_matrix, ) }
 
     pub fn new(centre:(f32, f32, f32), side_len:f32, texture_size:f32) -> Cube {
 

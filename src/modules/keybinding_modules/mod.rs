@@ -3,3 +3,4 @@ pub mod window;
 pub mod pause;
 pub mod screenshot;
 pub mod camera_mode;
+pub mod keybindings;

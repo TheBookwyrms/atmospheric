@@ -5,8 +5,9 @@ use crate::camera::Camera;
 use crate::enums::{
     BufferBit, CameraMode, CameraVector, ContextError, DataFormat, DrawType, GlError, UniformType
 };
-use crate::modules::keybindings::{KeybindingModule, Keybindings};
-use crate::modules::shaders::{ShaderModule, Shaders};
+use crate::modules::keybinding_modules::keybindings::{KeybindingModule, Keybindings};
+use crate::modules::shader_modules::shaders::Shaders;
+use crate::modules::shader_modules::shader_module_enum::ShaderModule;
 use crate::objects::lighting::{Light, LightCounter};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
@@ -55,14 +56,14 @@ pub struct Context<'a> {
     pub camera:Camera,
     pub shaders:Shaders<'a>,
     //pub programs:Programs,
-    pub textures:Textures<'a>,
+    pub textures:Textures,
     pub keybindings:Keybindings,
 
 
     pub assorted_details:AssortedContextDetails,
 }
 impl<'a> Context<'a> {
-    //pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybinding_modules:Vec<Box<dyn KeybindingModule>>) -> Result<Self, ContextError> {
+
     pub fn new(window_name:&'static str, window_height:u32, window_width:u32, camera_mode:CameraMode, max_lights:LightCounter, keybindings:Vec<KeybindingModule>, shaders:Vec<ShaderModule<'a>>) -> Result<Self, ContextError> {
         let window = Window::new_opengl(window_name, window_width, window_height)?;
         let camera = Camera::new(camera_mode);
@@ -76,6 +77,7 @@ impl<'a> Context<'a> {
             assorted_details:AssortedContextDetails::default(),
          })
     }
+
     pub fn new_default(max_lights:LightCounter) -> Result<Self, ContextError> {
         let window = Window::new_opengl("window name!", 1920, 1080)?;
         let camera = Camera::new(CameraMode::Encompassing);
@@ -97,6 +99,7 @@ impl<'a> Context<'a> {
                 ShaderModule::SimpleOrthographic,
                 ShaderModule::SimpleTexture,
                 ShaderModule::TwoTexture,
+                //ShaderModule::SimpleTransform,
             ],
             &max_lights
         )?;
@@ -106,6 +109,7 @@ impl<'a> Context<'a> {
             assorted_details:AssortedContextDetails::default(),
          })
     }
+    
     pub fn render_over(&self) -> bool { self.window.should_close() }
     pub fn poll_events(&mut self) { self.window.poll_events(); }
 
@@ -175,44 +179,6 @@ impl<'a> Context<'a> {
 
 
 
-    //pub fn create_vao_vbo_ebo<U:ShapeTrait<2>, V:ShapeTrait<2>>(&self, vertices:&Matrix<f32, 2, U>, indices:&Matrix<i32, 2, V>, format:DataFormat
-    //) -> Result<(u32, u32, u32), ContextError> {
-//
-    //    let with_vao = WithObject::new(&self.window.get_opengl_handle(), Object::VAO, format);
-    //    
-    //    let with_vbo = WithObject::new(&self.window.get_opengl_handle(), Object::VBO, format);
-    //    with_vbo.buffer_data(vertices, DrawType::DynamicDraw, Object::VBO)?;
-//
-    //    let with_ebo = WithObject::new(&self.window.get_opengl_handle(), Object::EBO, format);
-    //    with_ebo.buffer_data(indices, DrawType::DynamicDraw, Object::EBO)?;
-//
-    //    with_vao.set_vertex_attribs(vertices.dtype_memsize() as i32)?;
-//
-    //    Ok((with_vao.get_vao(), with_vbo.get_vbo(), with_ebo.get_ebo()))
-    //}
-//
-//
-    //pub fn create_vao_vbo<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, format:DataFormat) -> Result<(u32, u32), ContextError> {
-    //    let with_vao = WithObject::new(&self.window.get_opengl_handle(), Object::VAO, format);
-    //    let with_vbo = WithObject::new(&self.window.get_opengl_handle(), Object::VBO, format);
-//
-    //    with_vbo.buffer_data(data, DrawType::DynamicDraw, Object::VBO)?;
-//
-    //    with_vao.set_vertex_attribs(data.dtype_memsize() as i32)?;
-//
-    //    Ok((with_vao.get_vao(), with_vbo.get_vbo()))
-    //}
-
-
-    pub fn set_custom_uniform<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, program_id:u32, uniform:Uniform, value:Matrix<T, N, U>) -> Result<(), GlError> {
-        intermediate_opengl::set_uniform(&self.window.get_opengl_handle(), program_id, uniform.name, uniform.uniform_type, value.as_ptr())
-    }
-
-    pub fn use_custom_program(&mut self, shader:ShaderModule<'a>) -> Result<(), GlError> {
-        //self.programs.use_program(&self.window.get_opengl_handle(), ProgramSelect::Custom(shader))
-        self.shaders.use_program(&self.window.get_opengl_handle(), shader)
-    }
-
 
     /// lights is used for setting lighting uniforms \
     /// such as for blinn-phong lighting, where we need light source uniforms \
@@ -225,50 +191,6 @@ impl<'a> Context<'a> {
         self.shaders.set_uniforms_for_program(shader, &self.window, &self.camera, lights)
     }
 
-    pub fn set_world_transform_uniform(&self, transform:Matrix<f32, 2, S2<4, 4>>) -> Result<(), ContextError> {
-        
-        let model_transform = Matrix::opengl_to_right_handed().matmul(&transform);
-
-        self.shaders.set_uniform(&self.window.get_opengl_handle(), "world_transform",
-            UniformType::Mat4, model_transform)?;
-        
-        Ok(())
-    }
-
-    pub fn set_orthographic_camera_uniforms(&self) -> Result<(), ContextError> {
-        // opengl, id, uniform_name, uniform_type, value
-
-        // model
-        self.set_world_transform_uniform(Matrix::identity())?;
-
-        // view
-        self.shaders.set_uniform(&self.window.get_opengl_handle(), "camera_transformation", UniformType::Mat4,
-            //self.camera.get_camera_transform()?)?;
-            self.camera.get_camera_view_matrix())?;
-
-        // projection
-        self.shaders.set_uniform(&self.window.get_opengl_handle(), "orthographic_projection", UniformType::Mat4,
-            self.camera.get_orthographic_projection(self.window.get_aspect_ratio()))?;
-
-        Ok(())
-    }
-
-
-
-    pub fn set_blinn_phong_uniforms(&self) -> Result<(), ContextError> {
-
-
-
-            
-        self.shaders.set_uniform(&self.window.get_opengl_handle(),"camera_viewpos", UniformType::Vec3,
-            Matrix::from_vector(
-                self.camera.camera_info.get_camera(CameraVector::Position)
-            ))?;
-
-
-        Ok(())
-
-    }
 
 
 

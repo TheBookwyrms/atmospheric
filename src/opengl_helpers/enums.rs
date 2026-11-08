@@ -45,6 +45,7 @@ pub enum GlError {
     InvalidCustomProgramSelect,
     InvalidDrawInstancing,
     ShaderModuleIdNotFound,
+    DuplicatedShaderModuleOption,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -156,7 +157,8 @@ pub enum DataFormat {
     Position3Colour3Alpha1,
     Position3Colour3Alpha1Normal3,
     Position3Colour3Alpha1Normal3Texture2,
-    Position3Colour4Normal3Texture2Material4TranformationMat4([UpdateVertexAttrib; 3]),
+    //Position3Colour4Normal3Texture2Material4TranformationMat4([UpdateVertexAttrib; 3]),
+    //Position3Colour4TranformationMat4([UpdateVertexAttrib; 3]),
     //Position3Colour3Texture2,
     //Position3Colour3Alpha1Texture2,
 }
@@ -212,16 +214,18 @@ impl DataFormat {
                 intermediate_opengl::set_vertex_attrib_vec3(opengl, 0, 5, 0, dtype_size, UpdateVertexAttrib::PerVertex);
                 intermediate_opengl::set_vertex_attrib_vec2(opengl, 1, 5, 3, dtype_size, UpdateVertexAttrib::PerVertex);
             },
-            Self::Position3Colour4Normal3Texture2Material4TranformationMat4(
-                [colour_update, texture_update, material_update]
-            ) => {
-                intermediate_opengl::set_vertex_attrib_vec3(opengl, 0, 16, 0, dtype_size, UpdateVertexAttrib::PerVertex);
-                intermediate_opengl::set_vertex_attrib_vec4(opengl, 1, 16, 0+3, dtype_size, colour_update);
-                intermediate_opengl::set_vertex_attrib_vec3(opengl, 2, 16, 0+3+4, dtype_size, UpdateVertexAttrib::PerVertex);
-                intermediate_opengl::set_vertex_attrib_vec2(opengl, 3, 16, 0+3+4+3, dtype_size, texture_update);
-                intermediate_opengl::set_vertex_attrib_vec4(opengl, 4, 16, 0+3+4+3+2, dtype_size, material_update);
-                intermediate_opengl::set_vertex_attrib_mat4(opengl, 5, dtype_size, UpdateVertexAttrib::PerInstance(1));
-            }
+            //Self::Position3Colour4Normal3Texture2Material4TranformationMat4(
+            //    [colour_update, texture_update, material_update]
+            //) => {
+            //    intermediate_opengl::set_vertex_attrib_vec3(opengl, 0, 16, 0, dtype_size, UpdateVertexAttrib::PerVertex);
+            //    intermediate_opengl::set_vertex_attrib_vec4(opengl, 1, 16, 0+3, dtype_size, colour_update);
+            //    intermediate_opengl::set_vertex_attrib_vec3(opengl, 2, 16, 0+3+4, dtype_size, UpdateVertexAttrib::PerVertex);
+            //    intermediate_opengl::set_vertex_attrib_vec2(opengl, 3, 16, 0+3+4+3, dtype_size, texture_update);
+            //    intermediate_opengl::set_vertex_attrib_vec4(opengl, 4, 16, 0+3+4+3+2, dtype_size, material_update);
+            //    intermediate_opengl::set_vertex_attrib_mat4(opengl, 5, dtype_size, UpdateVertexAttrib::PerInstance(1));
+            //},
+            //Self::Position3Colour4TranformationMat4() => {},
+
         }
     }
 }
@@ -444,9 +448,9 @@ pub enum ObjectColour<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
    PerVertex(Matrix<f32, 2, S2<4, NUM_VERTICES>>),
 }
 
-pub enum ObjectTexture<'a, const NUM_VERTICES:usize> {
+pub enum ObjectTexture<const NUM_VERTICES:usize> {
    None,
-   PerVertex(Image, Image, &'a Matrix<f32, 2, S2<2, NUM_VERTICES>>),
+   PerVertex(Image, Image, Matrix<f32, 2, S2<2, NUM_VERTICES>>),
 }
 
 pub enum ObjectMaterials<const NUM_VERTICES:usize> {

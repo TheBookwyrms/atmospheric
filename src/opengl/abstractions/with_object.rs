@@ -5,9 +5,9 @@ use crate::enums::{
     GlError, Object, UpdateVertexAttrib,
 };
 use crate::opengl::intermediate_opengl;
+use crate::opengl_helpers::opengl_data::OpenGLData;
 
 //use numeracy::matrices::Matrix;
-use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
 use std::os::raw::c_void;
 
@@ -92,12 +92,12 @@ impl WithVao<'_> {
         Ok(())
     }
 
-    pub fn draw<T:Clone, const ITEMS_PER_VERTEX:usize, const NUM_VERTICES:usize>(&self, mode:DrawMode, _data:&Matrix<T, 2, S2<ITEMS_PER_VERTEX, NUM_VERTICES>>) {
-        intermediate_opengl::draw_arrays(self.opengl, mode, NUM_VERTICES as i32);
+    pub fn draw<Data:OpenGLData>(&self, mode:DrawMode, data:&Data) {
+        intermediate_opengl::draw_arrays(self.opengl, mode, data.num_vertices() as i32);
     }
 
-    pub fn draw_instanced<T:Clone, const ITEMS_PER_VERTEX:usize, const NUM_VERTICES:usize>(&self, mode:DrawMode, _data:&Matrix<T, 2, S2<ITEMS_PER_VERTEX, NUM_VERTICES>>, instance_count:i32) {
-        intermediate_opengl::draw_arrays_instanced(self.opengl, mode, NUM_VERTICES as i32, instance_count);
+    pub fn draw_instanced<Data:OpenGLData>(&self, mode:DrawMode, data:&Data, instance_count:i32) {
+        intermediate_opengl::draw_arrays_instanced(self.opengl, mode, data.num_vertices() as i32, instance_count);
     }
     
 }
@@ -145,7 +145,7 @@ impl WithVbo<'_> {
         WithVbo { opengl, vbo:id }
     }
 
-    pub fn buffer_data<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, draw_type:DrawType) {
+    pub fn buffer_data<Data:OpenGLData>(&self, data:&Data, draw_type:DrawType) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
         intermediate_opengl::buffer_data(
@@ -155,7 +155,7 @@ impl WithVbo<'_> {
         )
     }
 
-    pub fn buffer_sub_data<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>) {
+    pub fn buffer_sub_data<Data:OpenGLData>(&self, data:&Data) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
 
@@ -221,7 +221,7 @@ impl WithEbo<'_> {
         WithEbo { opengl, data_format:format, ebo:id }
     }
 
-    pub fn buffer_data<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<T, N, U>, draw_type:DrawType) {
+    pub fn buffer_data<Data:OpenGLData>(&self, data:&Data, draw_type:DrawType) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
         intermediate_opengl::buffer_data(
@@ -231,7 +231,7 @@ impl WithEbo<'_> {
         )
     }
 
-    pub fn buffer_sub_data<U:ShapeTrait<2>>(&self, data:&Matrix<f32, 2, U>) {
+    pub fn buffer_sub_data<Data:OpenGLData>(&self, data:&Data) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
         intermediate_opengl::buffer_sub_data(
@@ -296,7 +296,7 @@ impl WithVaoEbo<'_> {
         WithVaoEbo { opengl, data_format:format, vao, ebo }
     }
 
-    pub fn buffer_data<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<T, N, U>, draw_type:DrawType) {
+    pub fn buffer_data<Data:OpenGLData>(&self, data:&Data, draw_type:DrawType) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
         intermediate_opengl::buffer_data(
@@ -306,7 +306,7 @@ impl WithVaoEbo<'_> {
         );
     }
 
-    pub fn buffer_sub_data<U:ShapeTrait<2>>(&self, data:&Matrix<f32, 2, U>) {
+    pub fn buffer_sub_data<Data:OpenGLData>(&self, data:&Data) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
 
@@ -364,16 +364,16 @@ impl WithVaoEbo<'_> {
         
     }
 
-    pub fn draw<T:Clone, U:ShapeTrait<2>>(&self, mode:DrawMode, data:&Matrix<T, 2, U>) {
+    pub fn draw<Data:OpenGLData>(&self, mode:DrawMode, data:&Data) {
 
-        let count = data.shape.as_array().iter().map(|s| *s as i32).product();
+        let count = data.num_items() as i32;
 
         intermediate_opengl::draw_elements(&self.opengl, mode, count);
     }
 
-    pub fn draw_instanced<T:Clone, U:ShapeTrait<2>>(&self, mode:DrawMode, data:&Matrix<T, 2, U>, instance_count:i32) {
+    pub fn draw_instanced<Data:OpenGLData>(&self, mode:DrawMode, data:&Data, instance_count:i32) {
 
-        let count = data.shape.as_array().iter().map(|s| *s as i32).product();
+        let count = data.num_items() as i32;
 
         intermediate_opengl::draw_elements_instanced(&self.opengl, mode, count, instance_count);
     }
@@ -434,7 +434,7 @@ impl WithVaoVbo<'_> {
         WithVaoVbo { opengl, data_format:format, vao, vbo }
     }
 
-    pub fn buffer_data<T:Clone, const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<T, N, U>, draw_type:DrawType) {
+    pub fn buffer_data<Data:OpenGLData>(&self, data:&Data, draw_type:DrawType) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
         intermediate_opengl::buffer_data(
@@ -444,7 +444,7 @@ impl WithVaoVbo<'_> {
         );
     }
 
-    pub fn buffer_sub_data<U:ShapeTrait<2>>(&self, data:&Matrix<f32, 2, U>) {
+    pub fn buffer_sub_data<Data:OpenGLData>(&self, data:&Data) {
         let data_size = data.memory_size() as isize;
         let data_ptr = data.as_ptr() as *const c_void;
 
@@ -502,12 +502,12 @@ impl WithVaoVbo<'_> {
         
     }
 
-    pub fn draw<T:Clone, const ITEMS_PER_VERTEX:usize, const NUM_VERTICES:usize>(&self, mode:DrawMode, data:&Matrix<T, 2, S2<ITEMS_PER_VERTEX, NUM_VERTICES>>) {
-        intermediate_opengl::draw_arrays(self.opengl, mode, NUM_VERTICES as i32);
+    pub fn draw<Data:OpenGLData>(&self, mode:DrawMode, data:&Data) {
+        intermediate_opengl::draw_arrays(self.opengl, mode, data.num_vertices() as i32);
     }
 
-    pub fn draw_instanced<T:Clone, const ITEMS_PER_VERTEX:usize, const NUM_VERTICES:usize>(&self, mode:DrawMode, data:&Matrix<T, 2, S2<ITEMS_PER_VERTEX, NUM_VERTICES>>, instance_count:i32) {
-        intermediate_opengl::draw_arrays_instanced(self.opengl, mode, NUM_VERTICES as i32, instance_count);
+    pub fn draw_instanced<Data:OpenGLData>(&self, mode:DrawMode, data:&Data, instance_count:i32) {
+        intermediate_opengl::draw_arrays_instanced(self.opengl, mode, data.num_vertices() as i32, instance_count);
     }
     
 }

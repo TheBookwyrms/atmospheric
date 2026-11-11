@@ -6,4 +6,7 @@ edition = "2024"
 [dependencies]
 #atmospheric = {git = "https://github.com/TheBookwyrms/atmospheric.git", rev = "9027db4c77dc16af6f95778fe5a60182e2141910"}
 atmospheric = {path = "../.."}
-numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", rev = "9e2b182f8ac692182fd9ef3a7aff479574862ec7"}
+numeracy = {path = "../../../numeracy"}
+#numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", rev = "9e2b182f8ac692182fd9ef3a7aff479574862ec7"}
+
+rand = "0.10"

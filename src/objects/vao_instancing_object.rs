@@ -1,3 +1,4 @@
+use crate::opengl_helpers::opengl_data::OpenGLData;
 use crate::{image_processing::Image, modules::shader_modules::shaders::Shaders};
 use crate::materials::Material;
 use numeracy::matrices::{Matrix, S1, S2, S3,};
@@ -26,18 +27,19 @@ static MAT_ONES_LAZYLOCK:LazyLock<Matrix<f32, 2, S2<4, 1>>> = LazyLock::new(|| M
 
  
  
-pub struct InstancingObject<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
+#[derive(Debug, Clone)]
+pub struct InstancingObject<const NUM_VERTICES:usize> {
     position_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
     _normals_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
     
-    _colour_matrix:ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
+    _colour_matrix:ObjectColour<NUM_VERTICES>,
     //texture_coords_matrix:ObjectTextureCoords<NUM_VERTICES>,
     _materials_matrix:ObjectMaterials<NUM_VERTICES>,
 
     /// vec of mat4, length N, for position and normals
     //transformation_matrices:Vec<Matrix<f32, 2, S2<4, 4>>>,
-    transformation_matrices:[Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
-    prior_transformation_matrices:[Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
+    transformation_matrices:Vec<Matrix<f32, 2, S2<4, 4>>>,
+    prior_transformation_matrices:Vec<Matrix<f32, 2, S2<4, 4>>>,
     
     object_vao:u32,
     _position_matrix_vbo:u32,
@@ -49,33 +51,48 @@ pub struct InstancingObject<const NUM_INSTANCES:usize, const NUM_VERTICES:usize>
 
     diffuse_texture:PreparedTexture,
     specular_texture:PreparedTexture,
+
+    draw_mode:DrawMode
 }
 
-impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> Index<usize> for InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+impl<const NUM_VERTICES:usize> Index<usize> for InstancingObject<NUM_VERTICES> {
     type Output = Matrix<f32, 2, S2<4, 4>>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.transformation_matrices[index]
     }
 }
 
-impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> IndexMut<usize> for InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+impl<const NUM_VERTICES:usize> IndexMut<usize> for InstancingObject<NUM_VERTICES> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.transformation_matrices[index]
     }
 }
  
-impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+impl<const NUM_VERTICES:usize> InstancingObject<NUM_VERTICES> {
+
+    pub fn get_transformation_matrices(&self) -> &Vec<Matrix<f32, 2, S2<4, 4>>> {
+        &self.transformation_matrices
+    }
+    pub fn get_position_matrix(&self) -> &Matrix<f32, 2, S2<3, NUM_VERTICES>> {
+        &self.position_matrix
+    }
+    pub fn get_colour_matrix(&self) -> &ObjectColour<NUM_VERTICES> {
+        &self._colour_matrix
+    }
+    pub fn get_normal_matrix(&self) -> &Matrix<f32, 2, S2<3, NUM_VERTICES>> {
+        &self._normals_matrix
+    }
 
     pub fn new(
         opengl          : &Gl,
         positions       : Matrix<f32, 2, S2<3, NUM_VERTICES>>,
         normals         : Matrix<f32, 2, S2<3, NUM_VERTICES>>,
-        colour          : ObjectColour<NUM_INSTANCES, NUM_VERTICES>,
+        colour          : ObjectColour<NUM_VERTICES>,
         materials       : ObjectMaterials<NUM_VERTICES>,
         texture         : ObjectTexture<NUM_VERTICES>,
-        transformations : [Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
+        transformations : Vec<Matrix<f32, 2, S2<4, 4>>>,
+        draw_mode:DrawMode
      ) -> Self {
- 
 
         let dtype_size = positions.dtype_memsize() as i32;
 
@@ -93,30 +110,29 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_I
                 DataFormat::Colour4(At(1), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
             },
             ObjectColour::Constant(ref mat) => {
-                with_colours_vbo.buffer_data(&mat, DrawType::DynamicDraw);
+                with_colours_vbo.buffer_data(mat, DrawType::DynamicDraw);
                 DataFormat::Colour4(At(1), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
             },
             ObjectColour::ConstantPerInstance(ref vec_mat) => {
-                // just completely lying about the length of this array
-                let mut arrs = Vec::with_capacity(NUM_INSTANCES);
-                vec_mat.iter().for_each(|m| arrs.push(m.get_view_of_array()));
-                let colours = Matrix::from_vec_with_shape(
-                    arrs.concat()
-                    ,//.concat(),
-                    S3::<4, 1, NUM_INSTANCES>
-                );
-                with_colours_vbo.buffer_data(&colours, DrawType::DynamicDraw);
+                with_colours_vbo.buffer_data(vec_mat, DrawType::DynamicDraw);
                 DataFormat::Colour4(At(1), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
             }
+            ObjectColour::PerVertexPerInstance(ref mat) => {
+                with_colours_vbo.buffer_data(mat, DrawType::DynamicDraw);
+                //DataFormat::Colour4(At(1), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
+                DataFormat::Colour4(At(1), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
+                //todo!()
+            }
             ObjectColour::PerVertex(ref mat) => {
-                with_colours_vbo.buffer_data(&mat, DrawType::DynamicDraw);
+                with_colours_vbo.buffer_data(mat, DrawType::DynamicDraw);
                 DataFormat::Colour4(At(1), PerVertex).set_vertex_attribs(opengl, dtype_size);
             },
         }
 
         let with_normals_vbo = WithVbo::new(opengl);
         with_normals_vbo.buffer_data(&normals, DrawType::DynamicDraw);
-        DataFormat::Normal3(At(2), PerVertex).set_vertex_attribs(opengl, dtype_size);
+        //DataFormat::Normal3(At(2), PerVertex).set_vertex_attribs(opengl, dtype_size);
+        DataFormat::Normal3(At(5), PerVertex).set_vertex_attribs(opengl, dtype_size);
 
         let with_texture_coords_vbo = WithVbo::new(opengl);
         let (diffuse_texture, specular_texture) = match texture {
@@ -125,7 +141,8 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_I
                 let default_specular = TextureSetup::get_prepared_default(opengl, WHITE_PPM.clone());
                 
                 with_texture_coords_vbo.buffer_data(&Matrix::from_1darray([0.5; 2]), DrawType::DynamicDraw);
-                DataFormat::Texture2(At(3), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
+                //DataFormat::Texture2(At(3), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
+                DataFormat::Texture2(At(6), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
                 
                 (default_diffuse, default_specular)
             },
@@ -133,8 +150,9 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_I
                 let diffuse  = TextureSetup::get_prepared_default(opengl, diffuse_image);
                 let specular = TextureSetup::get_prepared_default(opengl, specular_image);
 
-                with_texture_coords_vbo.buffer_data(&mat, DrawType::DynamicDraw);
-                DataFormat::Texture2(At(3), PerVertex).set_vertex_attribs(opengl, dtype_size);
+                with_texture_coords_vbo.buffer_data(mat, DrawType::DynamicDraw);
+                //DataFormat::Texture2(At(3), PerVertex).set_vertex_attribs(opengl, dtype_size);
+                DataFormat::Texture2(At(6), PerVertex).set_vertex_attribs(opengl, dtype_size);
 
                 (diffuse, specular)
             },
@@ -145,46 +163,40 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_I
             ObjectMaterials::None => {
                 with_materials_vbo.buffer_data(&Matrix::from_1darray(Material::Default.get_material_qualities().get_components_array()), DrawType::DynamicDraw);
                 // takes up locations 4, 5, 6, 7
-                DataFormat::Material3331(At(4), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
+                //DataFormat::Material3331(At(4), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
+                DataFormat::Material3331(At(7), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
             },
             ObjectMaterials::Constant(material) => {
                 let data = Matrix::from_1darray(material.get_material_qualities().get_components_array());
                 with_materials_vbo.buffer_data(&data, DrawType::DynamicDraw);
                 // takes up locations 4, 5, 6, 7
-                DataFormat::Material3331(At(4), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
+                //DataFormat::Material3331(At(4), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
+                DataFormat::Material3331(At(7), PerInstance(transformations.len() as u32)).set_vertex_attribs(opengl, dtype_size);
 
             },
             ObjectMaterials::PerVertex(ref materials_matrix) => {
                 let mut material_values = vec![];
                 materials_matrix.array.iter().for_each(
                     |material| {
-                        material_values.extend(
-                            material.get_material_qualities().get_components_array()
+                        material_values.push(
+                            Matrix::from_1darray(material.get_material_qualities().get_components_array())
                         );
                     }
                 );
 
                 // takes up locations 4, 5, 6, 7
                 // also lying about data length, because no const generics
-                with_materials_vbo.buffer_data(&Matrix::<f32, 1, S1<1>>::from_vec(material_values), DrawType::DynamicDraw);
-                DataFormat::Material3331(At(4), PerVertex).set_vertex_attribs(opengl, dtype_size);
+                with_materials_vbo.buffer_data(&material_values, DrawType::DynamicDraw);
+                //DataFormat::Material3331(At(4), PerVertex).set_vertex_attribs(opengl, dtype_size);
+                DataFormat::Material3331(At(7), PerVertex).set_vertex_attribs(opengl, dtype_size);
             },
         }
 
-        //let transformation_data = Matrix::from_vec_with_shape(
-        //    transformations.map(|t| t.get_view_of_array().to_vec()).concat(),
-        //    S3::<4, 4, NUM_INSTANCES>
-        //);
-        let mut arrs = Vec::with_capacity(NUM_INSTANCES);
-        transformations.iter().for_each(|m| arrs.push(m.get_view_of_array()));
-        let transformation_data = Matrix::from_vec_with_shape(
-            arrs.concat(),
-            S3::<4, 4, NUM_INSTANCES>
-        );
         let with_transformations_vbo = WithVbo::new(opengl);
-        with_transformations_vbo.buffer_data(&transformation_data, DrawType::DynamicDraw);
+        with_transformations_vbo.buffer_data(&transformations, DrawType::DynamicDraw);
         // takes up locations 8, 9, 10, 11
-        DataFormat::TranformationMatrix4x4(At(8), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
+        //DataFormat::TranformationMatrix4x4(At(8), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
+        DataFormat::TranformationMatrix4x4(At(11), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
 
 
 
@@ -211,10 +223,24 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_I
  
             diffuse_texture,
             specular_texture,
+
+            draw_mode,
          }
     }
     
     pub fn draw(&self, opengl:&Gl, textures:&mut Textures, shaders:&Shaders) -> Result<(), ContextError> {
+
+
+        if let ObjectColour::PerVertexPerInstance(vm) = &self._colour_matrix {
+            println!("{:?}", self.transformation_matrices.len()*self.position_matrix.num_items()*4/3);
+            println!("{:?}", vm.num_items());
+            println!("{:?}", self.transformation_matrices.num_items());
+        }
+        else {
+            println!("huh")
+        }
+        //panic!();
+
 
         textures.activate(
             opengl, OpenglTexture::Texture0, self.diffuse_texture, shaders
@@ -229,17 +255,18 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_I
 
 
         if self.transformation_matrices != self.prior_transformation_matrices {
-            let mut arrs = Vec::with_capacity(NUM_INSTANCES);
-            self.transformation_matrices.iter().for_each(|m| arrs.push(m.get_view_of_array()));
-            let transformation_data = Matrix::from_vec_with_shape(
-                arrs.concat(),
-                S3::<4, 4, NUM_INSTANCES>
-            );
+            //let mut arrs = Vec::with_capacity(NUM_INSTANCES);
+            //self.transformation_matrices.iter().for_each(|m| arrs.push(m.get_view_of_array()));
+            //let transformation_data = Matrix::from_vec_with_shape(
+            //    arrs.concat(),
+            //    S3::<4, 4, NUM_INSTANCES>
+            //);
 
-            with_transformations_vbo.buffer_sub_data(&transformation_data);
+            with_transformations_vbo.buffer_sub_data(&self.transformation_matrices);
         }
 
-        with_vao.draw_instanced(DrawMode::GlTriangles, &self.position_matrix, self.transformation_matrices.len().try_into().unwrap());
+        //with_vao.draw_instanced(self.draw_mode, &self.position_matrix, 1);
+        with_vao.draw_instanced(self.draw_mode, &self.position_matrix, self.transformation_matrices.len().try_into().unwrap());
     
         textures.deactivate(opengl, OpenglTexture::Texture0)?;
         textures.deactivate(opengl, OpenglTexture::Texture1)?;
@@ -347,12 +374,12 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_I
 
 
 
-pub struct InstancingIter<const NUM_INSTANCES:usize> {
-    data: [Matrix<f32, 2, S2<4, 4>>;NUM_INSTANCES],
+pub struct InstancingIter {
+    data: Vec<Matrix<f32, 2, S2<4, 4>>>,
     index: usize,
 }
 
-impl<const NUM_INSTANCES:usize> Iterator for InstancingIter<NUM_INSTANCES> {
+impl Iterator for InstancingIter {
     type Item = Matrix<f32, 2, S2<4, 4>>;
 
     // next() must advance the state and return the next item.
@@ -368,9 +395,9 @@ impl<const NUM_INSTANCES:usize> Iterator for InstancingIter<NUM_INSTANCES> {
     }
 }
 
-impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> IntoIterator for InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+impl<const NUM_VERTICES:usize> IntoIterator for InstancingObject<NUM_VERTICES> {
     type Item = Matrix<f32, 2, S2<4, 4>>;
-    type IntoIter = InstancingIter<NUM_INSTANCES>;
+    type IntoIter = InstancingIter;
 
     // into_iter() consumes self and returns the iterator.
     // This moves the data into the iterator struct.
@@ -393,7 +420,7 @@ impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> IntoIterator for Insta
 
 
 
-impl<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> InstancingObject<NUM_INSTANCES, NUM_VERTICES> {
+impl<const NUM_VERTICES:usize> InstancingObject<NUM_VERTICES> {
     pub fn iter_mut(&mut self) -> IterMut<'_, Matrix<f32, 2, S2<4, 4>>> {
             self.transformation_matrices.iter_mut()
     }

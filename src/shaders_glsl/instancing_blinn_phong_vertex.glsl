@@ -1,14 +1,27 @@
 #version 330 core
 layout (location = 0) in vec3 point_positions;
 layout (location = 1) in vec4 point_colours;
-layout (location = 2) in vec3 point_norms;
-layout (location = 3) in vec2 texture_coords;
-layout (location = 4) in vec3 point_ambient_reflected_light;
-layout (location = 5) in vec3 point_diffuse_reflected_light;
-layout (location = 6) in vec3 point_specular_reflected_light;
-layout (location = 7) in float point_shininess;
+layout (location = 5) in vec3 point_norms;
+layout (location = 6) in vec2 texture_coords;
+layout (location = 7) in vec3 point_ambient_reflected_light;
+layout (location = 8) in vec3 point_diffuse_reflected_light;
+layout (location = 9) in vec3 point_specular_reflected_light;
+layout (location = 10) in float point_shininess;
 // mat4 consumes locations 8, 9, 10, 11
-layout (location = 8) in mat4 transformation_matrix;
+layout (location = 11) in mat4 transformation_matrix;
+
+
+// #version 330 core
+// layout (location = 0) in vec3 point_positions;
+// layout (location = 1) in vec4 point_colours;
+// layout (location = 2) in vec3 point_norms;
+// layout (location = 3) in vec2 texture_coords;
+// layout (location = 4) in vec3 point_ambient_reflected_light;
+// layout (location = 5) in vec3 point_diffuse_reflected_light;
+// layout (location = 6) in vec3 point_specular_reflected_light;
+// layout (location = 7) in float point_shininess;
+// // mat4 consumes locations 8, 9, 10, 11
+// layout (location = 8) in mat4 transformation_matrix;
 
 
 

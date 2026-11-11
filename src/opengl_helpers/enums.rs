@@ -440,19 +440,22 @@ pub enum UpdateVertexAttrib {
     PerInstance(u32)
 }
 
-
-pub enum ObjectColour<const NUM_INSTANCES:usize, const NUM_VERTICES:usize> {
+#[derive(Debug, Clone)]
+pub enum ObjectColour<const NUM_VERTICES:usize> {
    None,
    Constant( Matrix<f32, 2, S2<4, 1>>),
-   ConstantPerInstance([Matrix<f32, 2, S2<4, 1>>;NUM_INSTANCES]),
+   ConstantPerInstance(Vec<Matrix<f32, 2, S2<4, 1>>>),
+   PerVertexPerInstance(Vec<Matrix<f32, 2, S2<4, NUM_VERTICES>>>),
    PerVertex(Matrix<f32, 2, S2<4, NUM_VERTICES>>),
 }
 
+#[derive(Debug, Clone)]
 pub enum ObjectTexture<const NUM_VERTICES:usize> {
    None,
    PerVertex(Image, Image, Matrix<f32, 2, S2<2, NUM_VERTICES>>),
 }
 
+#[derive(Debug, Clone)]
 pub enum ObjectMaterials<const NUM_VERTICES:usize> {
    None,
    Constant( Material),

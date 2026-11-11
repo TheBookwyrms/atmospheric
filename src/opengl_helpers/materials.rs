@@ -1,4 +1,4 @@
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct MaterialLightQualities {
     ambient_reflected_light  : [f32; 3],
     diffuse_reflected_light  : [f32; 3],
@@ -30,7 +30,7 @@ impl MaterialLightQualities {
 
 
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Material {
     Default,
     Brass,

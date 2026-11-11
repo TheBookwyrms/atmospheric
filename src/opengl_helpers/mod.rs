@@ -5,3 +5,5 @@ pub mod image_processing;
 
 pub mod camera;
 pub mod materials;
+
+pub mod opengl_data;

@@ -91,9 +91,9 @@ impl<'a> Shaders<'a> {
         }
     }
 
-    pub fn draw<T:Clone, const ITEMS_PER_VERTEX:usize, const NUM_VERTICES:usize>(
+    pub fn draw<const ITEMS_PER_VERTEX:usize, const NUM_VERTICES:usize>(
         &self, objects:WithVao,
-        mode:DrawMode, data:&Matrix<T, 2, S2<ITEMS_PER_VERTEX, NUM_VERTICES>>,
+        mode:DrawMode, data:&Matrix<f32, 2, S2<ITEMS_PER_VERTEX, NUM_VERTICES>>,
         format:DataFormat
     ) -> Result<(), GlError> {
 

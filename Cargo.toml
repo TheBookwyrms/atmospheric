@@ -10,8 +10,8 @@ gl_generator = "0.14"
 
 
 [dependencies]
-#numeracy = {path = "../numeracy"}
-numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", rev = "9e2b182f8ac692182fd9ef3a7aff479574862ec7"}
+numeracy = {path = "../numeracy"}
+#numeracy = {git = "https://github.com/TheBookwyrms/numeracy.git", rev = "9e2b182f8ac692182fd9ef3a7aff479574862ec7"}
 glfw = { version = "0.60", default-features = false, features = ["prebuilt-libs", "raw-window-handle-v0-6"]}
 
 zune-jpeg = "=0.4.21"

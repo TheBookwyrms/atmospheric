@@ -12,6 +12,7 @@ use crate::objects::lighting::{Light, LightCounter};
 use crate::opengl::intermediate_opengl;
 //use crate::opengl::abstractions::{Programs, Textures, Uniform, WithObject};
 use crate::opengl::abstractions::{Textures, Uniform, WithEbo, WithVao, WithVbo};
+use crate::opengl_helpers::opengl_data::OpenGLData;
 
 use numeracy::matrices::{Matrix, S2, ShapeTrait};
 
@@ -149,8 +150,9 @@ impl<'a> Context<'a> {
 
 
 
-    pub fn create_vao_vbo_ebo<U:ShapeTrait<2>, V:ShapeTrait<2>>(&self, vertices:&Matrix<f32, 2, U>, indices:&Matrix<i32, 2, V>, format:DataFormat
-    ) -> (u32, u32, u32) {
+    pub fn create_vao_vbo_ebo<U:ShapeTrait<2>, V:ShapeTrait<2>>(
+        &self, vertices:&Matrix<f32, 2, U>, indices:&Matrix<i32, 2, V>, format:DataFormat
+    ) -> (u32, u32, u32) where Matrix<f32, 2, U>: OpenGLData, Matrix<i32, 2, V>: OpenGLData{
 
         let with_vao = WithVao::new(&self.window.get_opengl_handle());//, format);
         
@@ -166,7 +168,9 @@ impl<'a> Context<'a> {
     }
 
 
-    pub fn create_vao_vbo<const N:usize, U:ShapeTrait<N>>(&self, data:&Matrix<f32, N, U>, format:DataFormat) -> (u32, u32) {
+    pub fn create_vao_vbo<U:ShapeTrait<2>>(
+        &self, data:&Matrix<f32, 2, U>, format:DataFormat
+    ) -> (u32, u32) where Matrix<f32, 2, U>: OpenGLData {
         let with_vao = WithVao::new(&self.window.get_opengl_handle());//, format);
         let with_vbo = WithVbo::new(&self.window.get_opengl_handle());//, format);
 

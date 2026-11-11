@@ -2,15 +2,16 @@ use std::f32::consts::PI;
 
 use numeracy::{general_math::ranges::linspace, matrices::{Matrix, S2}, vectors::Vector};
 
+#[derive(Debug, Clone)]
+/// assume radius is always 1, and will be scaled later
+/// assume centred on the origin, and will be moved later
 pub struct TripleRingSphere {
     pub position_matrix : Matrix<f32, 2, S2<3, {3*10*60}>>,
     pub colour_matrix   : Matrix<f32, 2, S2<4, {3*10*60}>>,
     pub normal_matrix   : Matrix<f32, 2, S2<3, {3*10*60}>>,
-    pub radius:f32,
 }
 impl TripleRingSphere {
-    pub fn new(radius:f32, xyz_rgb:Matrix<f32, 2, S2<3,3>>) -> Self {
-        let xyz_rgb = Matrix::from_2darray([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]]);
+    pub fn new(xyz_rgb:Matrix<f32, 2, S2<3,3>>) -> Self {
         const RINGS_PER_AXIS:usize = 10;
         const POINTS_PER_RING:usize = 60;
         let mut x_circ = Matrix::null(S2::<3,{RINGS_PER_AXIS*POINTS_PER_RING}>);
@@ -20,10 +21,10 @@ impl TripleRingSphere {
         let mut y_circ_col = Matrix::null(S2::<4,{RINGS_PER_AXIS*POINTS_PER_RING}>);
         let mut z_circ_col = Matrix::null(S2::<4,{RINGS_PER_AXIS*POINTS_PER_RING}>);
         //for (i, height) in linspace(-radius, radius, RINGS_PER_AXIS, true).into_iter().enumerate() {
-        for (i, height) in linspace(0., 2.*radius, RINGS_PER_AXIS, true).into_iter().enumerate() {
+        for (i, height) in linspace(0. as f32, 2. as f32, RINGS_PER_AXIS, true).into_iter().enumerate() {
             for (j,radians) in linspace(0., 2.*PI, POINTS_PER_RING, true).into_iter().enumerate() {
 
-                let r = f32::sqrt(2.*radius*height.abs()-height.powf(2.));
+                let r = f32::sqrt((2.*height).abs()-height.powf(2.));
 
                 for ((offset, circ), circ_col) in (0..3).zip([&mut x_circ, &mut y_circ, &mut z_circ]).zip([&mut x_circ_col, &mut y_circ_col, &mut z_circ_col]) {                   
                     
@@ -31,11 +32,11 @@ impl TripleRingSphere {
                     let (ix, iy, iz) = ((offset)%3, (offset+1)%3, (offset+2)%3);
                     circ[[ix, i*POINTS_PER_RING +j]] = r*f32::cos(radians);
                     circ[[iy, i*POINTS_PER_RING +j]] = r*f32::sin(radians);
-                    circ[[iz, i*POINTS_PER_RING +j]] = height-radius;
+                    circ[[iz, i*POINTS_PER_RING +j]] = height-1.;
 
-                    circ_col[[0, i*POINTS_PER_RING +j]] = xyz_rgb.get_col(offset).unwrap().array[0];
-                    circ_col[[1, i*POINTS_PER_RING +j]] = xyz_rgb.get_col(offset).unwrap().array[1];
-                    circ_col[[2, i*POINTS_PER_RING +j]] = xyz_rgb.get_col(offset).unwrap().array[2];
+                    circ_col[[0, i*POINTS_PER_RING +j]] = xyz_rgb.get_row(offset).unwrap().array[0];
+                    circ_col[[1, i*POINTS_PER_RING +j]] = xyz_rgb.get_row(offset).unwrap().array[1];
+                    circ_col[[2, i*POINTS_PER_RING +j]] = xyz_rgb.get_row(offset).unwrap().array[2];
                     circ_col[[3, i*POINTS_PER_RING +j]] = 1.;
                 }
                 //x_circ[[0, i*POINTS_PER_RING +j]] = r*f32::cos(radians);
@@ -62,7 +63,7 @@ impl TripleRingSphere {
         let colour_matrix: Matrix<f32, 2, S2<4,1800>> = x_circ_col.expand_vertically::<600,1200>(y_circ_col).expand_vertically(z_circ_col);
         let normal_matrix: Matrix<f32, 2, S2<3,1800>> = position_matrix.clone();
 
-        Self { position_matrix, colour_matrix, normal_matrix, radius }
+        Self { position_matrix, colour_matrix, normal_matrix }
 
 
 

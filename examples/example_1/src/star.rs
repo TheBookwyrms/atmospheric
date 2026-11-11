@@ -8,6 +8,7 @@ use numeracy::vectors::Vector;
 
 use crate::sphere::TripleRingSphere;
 
+#[derive(Debug, Clone)]
 pub struct Star {
     pub drawing_data:SimpleColourObject<{3*10*60}>,
     pub mass:f32,
@@ -28,9 +29,12 @@ impl Star {
             (xc[0]+yc[0]+zc[0])/3., (xc[1]+yc[1]+zc[1])/3., (xc[2]+yc[2]+zc[2])/3.
         ];
 
-        let sphere = TripleRingSphere::new(radius, xyz_rgb);
+        let sphere = TripleRingSphere::new(xyz_rgb);
 
-        let transformation = GraphicsMatrices::<ColumnMajor>::translate(Vector::from_1darray(centre));
+        let scale = GraphicsMatrices::<ColumnMajor>::scale(Vector::from_1darray([radius; 3]));
+        let translation = &GraphicsMatrices::<ColumnMajor>::translate(Vector::from_1darray(centre));
+        let transformation = scale.matmul(translation);
+        //let transformation = GraphicsMatrices::<ColumnMajor>::scale(Vector::from_1darray([radius; 3]));
 
         let object = SimpleColourObject::new(
             render.window.get_opengl_handle(),

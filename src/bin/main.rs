@@ -8,6 +8,7 @@ use atmospheric::image_processing::Image;
 use atmospheric::enums::{
     CameraMode, ContextError, DataFormat, DrawMode, ImageFormat, LightForm, ObjectColour, ObjectMaterials, ObjectTexture
 };
+use atmospheric::materials::Material;
 use atmospheric::modules::shader_modules::shader_module_enum::ShaderModule;
 use atmospheric::objects::ntree::PointThing;
 use atmospheric::objects::octree::Octree;
@@ -74,8 +75,8 @@ fn main() -> Result<(), ContextError> {
     const NUM_INSTANCES:usize = 1000;
     let spawn_range = 50.;
 
-    let mut colour_matrices = Matrix::array_of::<NUM_INSTANCES>(Matrix::null(S2::<4, 1>));
-    let mut transformation_matrices = Matrix::array_of::<NUM_INSTANCES>(Matrix::null(S2::<4, 4>));
+    let mut colour_matrices = Vec::with_capacity(NUM_INSTANCES);
+    let mut transformation_matrices = Vec::with_capacity(NUM_INSTANCES);
     let delay = 100;
     for i in 0..NUM_INSTANCES {
         let tx = pseudo_random::pseudo_randf64(-spawn_range, spawn_range, delay) as f32;
@@ -98,8 +99,8 @@ fn main() -> Result<(), ContextError> {
 
         // transpose this as opengl uses column-major format
         // while i use row-major format for these matrices
-        transformation_matrices[i] = translate.matmul(&rotate);
-        colour_matrices[i] = Matrix::from_2darray([[cx, cy, cz, ca]]);
+        transformation_matrices.push(translate.matmul(&rotate));
+        colour_matrices.push(Matrix::from_2darray([[cx, cy, cz, ca]]));
 
 
     }
@@ -118,23 +119,24 @@ fn main() -> Result<(), ContextError> {
         cube_norm,
         //ObjectColour::None,
         //ObjectColour::Constant(Matrix::from_2darray([[1., 1., 1., 1.]])),
-        ObjectColour::ConstantPerInstance(colour_matrices),
-        //ObjectColour::PerVertex(ccnt_col),
-        //ObjectTextureCoords::PerVertex(ccnt_tex),
+        //ObjectColour::ConstantPerInstance(colour_matrices),
+        ObjectColour::PerVertex(cube_col.clone()),
         ObjectMaterials::None,
         //ObjectMaterials::Constant(Material::Emerald),
         //ObjectMaterials::Constant(Material::Silver),
-        //ObjectTexture::None,
-        ObjectTexture::PerVertex(container_diffuse_map, container_specular_map, cube_tex),
-        transformation_matrices
+        ObjectTexture::None,
+        //ObjectTexture::PerVertex(container_diffuse_map, container_specular_map, cube_tex),
+        transformation_matrices,
+        DrawMode::GlTriangles
     );
 
 
     let simple_cube = SimpleColourObject::new(
         &render.window.get_opengl_handle(),
-        cube_pos,
-        ObjectColour::PerVertex(cube_col),
-        Matrix::identity()
+        cube_pos.clone(),
+        ObjectColour::PerVertex(cube_col.clone()),
+        Matrix::identity(),
+        DrawMode::GlTriangles
     );
 
     

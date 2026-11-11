@@ -10,11 +10,12 @@ use std::sync::LazyLock;
 
 static MAT_ONES_LAZYLOCK:LazyLock<Matrix<f32, 2, S2<4, 1>>> = LazyLock::new(|| Matrix::from_2darray([[1.; 4]]));
  
- 
+
+#[derive(Debug, Clone)]
 pub struct SimpleColourObject<const NUM_VERTICES:usize> {
    origin_position_matrix:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
    
-   _colour_matrix:ObjectColour<1, NUM_VERTICES>,
+   _colour_matrix:ObjectColour<NUM_VERTICES>,
    transformation_matrix:Matrix<f32, 2, S2<4, 4>>,
    prior_transformation_matrix:Matrix<f32, 2, S2<4, 4>>,
    
@@ -22,6 +23,8 @@ pub struct SimpleColourObject<const NUM_VERTICES:usize> {
    _oeigin_position_matrix_vbo:u32,
    _colour_matrix_vbo:u32,
    transformation_matrix_vbo:u32,
+
+   draw_mode:DrawMode
 }
  
 impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
@@ -29,8 +32,9 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
     pub fn new(
         opengl:&Gl,
         origin_positions:Matrix<f32, 2, S2<3, NUM_VERTICES>>,
-        colour:ObjectColour<1, NUM_VERTICES>,
+        colour:ObjectColour<NUM_VERTICES>,
         transformation:Matrix<f32, 2, S2<4, 4>>,
+        draw_mode:DrawMode,
      ) -> Self {
  
 
@@ -50,15 +54,18 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
                 DataFormat::Colour4(At(1), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
             },
             ObjectColour::Constant(ref colour_mat) => {
-                with_colours_vbo.buffer_data(&colour_mat, DrawType::DynamicDraw);
+                with_colours_vbo.buffer_data(colour_mat, DrawType::DynamicDraw);
                 DataFormat::Colour4(At(1), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
             },
             ObjectColour::ConstantPerInstance(ref colour_mat) => {
                 with_colours_vbo.buffer_data(&colour_mat[0], DrawType::DynamicDraw);
                 DataFormat::Colour4(At(1), PerInstance(1)).set_vertex_attribs(opengl, dtype_size);
             }
+            ObjectColour::PerVertexPerInstance(ref mat) => {
+                todo!()
+            }
             ObjectColour::PerVertex(ref mat) => {
-                with_colours_vbo.buffer_data(&mat, DrawType::DynamicDraw);
+                with_colours_vbo.buffer_data(mat, DrawType::DynamicDraw);
                 DataFormat::Colour4(At(1), PerVertex).set_vertex_attribs(opengl, dtype_size);
             },
         }
@@ -85,6 +92,8 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
             _oeigin_position_matrix_vbo: with_positions_vbo.get_vbo(),
             _colour_matrix_vbo: with_colours_vbo.get_vbo(),
             transformation_matrix_vbo: with_transformations_vbo.get_vbo(),
+
+            draw_mode,
          }
     }
     
@@ -97,6 +106,6 @@ impl<const NUM_VERTICES:usize> SimpleColourObject<NUM_VERTICES> {
             with_transformation_vbo.buffer_sub_data(&self.transformation_matrix);
         }
 
-        with_vao.draw_instanced(DrawMode::GlTriangles, &self.origin_position_matrix, 1);
+        with_vao.draw_instanced(self.draw_mode, &self.origin_position_matrix, 1);
     }
 }
